@@ -156,8 +156,12 @@ species_picture_files <- c(
   "GAL.ALB" = "gal.alb_black_800px.JPG",
   "HYP.RAD" = "hyp.rad_03_black_800px.jpg",
   "KNA.A4x" = "kna.arv_01_black_800.JPG",
+  "LEU.AGG" = "leu.agg_03_black_800px.JPG",
+  "LEU.IRC" = "leu.agg_03_black_800px.JPG",
+  "LEU.VUL" = "leu.agg_03_black_800px.JPG",
   "LOT.COR" = "lot.cor_800px.JPG",
   "RAN.ACR" = "ran.acr_04_black_800px.JPG",
+  "SAL.PRA" = "sal.pra_04_black_800px.JPG",
   "TRA.AGG" = "tra.agg_01_black_800px.jpg",
   "TRA.PRA" = "tra.agg_01_black_800px.jpg",
   "TRA.ORI" = "tra.agg_01_black_800px.jpg"
