@@ -15,6 +15,20 @@ date_tag <- format(Sys.Date(), "%Y-%m-%d")
 long_file <- file.path(paste0(here(),"/exchange_rules_long_", date_tag, ".csv"))
 app_file <- file.path(paste0(here(),"/exchange_rules_app_", date_tag, ".csv"))
 app_dir <- file.path(here())
+project_dir <- here::here()
+
+long_file <- file.path(
+  project_dir,
+  paste0("exchange_rules_long_", date_tag, ".csv")
+)
+
+# The Shiny app always reads this stable repository-relative filename.
+app_file <- file.path(
+  project_dir,
+  "data",
+  "exchange_rules_app.csv"
+)
+>>>>>>> b0795396124ec622f18f335889093195d1286f05
 
 # ------------------------------------------------------------------
 # 2. Load the RData file safely
@@ -355,7 +369,7 @@ print(
 # ------------------------------------------------------------------
 
 dir.create(
-  path2DataSyn,
+  file.path(project_dir, "data"),
   recursive = TRUE,
   showWarnings = FALSE
 )
@@ -403,47 +417,11 @@ stopifnot(
 )
 
 # ------------------------------------------------------------------
-# 10. Create app folders and copy the current input file
+# 10. Report output locations
 # ------------------------------------------------------------------
-
-dir.create(
-  app_dir,
-  recursive = TRUE,
-  showWarnings = FALSE
-)
-
-dir.create(
-  file.path(app_dir, "data"),
-  recursive = TRUE,
-  showWarnings = FALSE
-)
-
-dir.create(
-  file.path(app_dir, "www"),
-  recursive = TRUE,
-  showWarnings = FALSE
-)
-
-copy_success <- file.copy(
-  from = app_file,
-  to = file.path(
-    app_dir,
-    "data",
-    "exchange_rules_app.csv"
-  ),
-  overwrite = TRUE
-)
-
-if (!copy_success) {
-  stop("The app CSV could not be copied into the app directory.")
-}
 
 message("Master CSV: ", long_file)
 message("App CSV: ", app_file)
-message("App directory: ", app_dir)
-
-#test_file <- file.path( app_dir,"data", "exchange_rules_app.csv")
-#app_data <- read.csv( test_file,colClasses = c(donor = "character", target = "character"),check.names = FALSE,fileEncoding = "UTF-8")
-
-setwd(app_dir)
-shiny::runApp()
+message(
+  "Data preparation complete. Start the app separately with shiny::runApp()."
+)

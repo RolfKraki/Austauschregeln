@@ -12,6 +12,26 @@ rules <- read.csv(
   fileEncoding = "UTF-8"
 )
 
+required_columns <- c(
+  "taxon",
+  "donor_id",
+  "target_id",
+  "status",
+  "status_label",
+  "is_neighbor",
+  "n_donor",
+  "n_target"
+)
+
+missing_columns <- setdiff(required_columns, names(rules))
+
+if (length(missing_columns) > 0L) {
+  stop(
+    "The app data are missing required columns: ",
+    paste(missing_columns, collapse = ", ")
+  )
+}
+
 # Use numeric identifiers internally.
 # Leading zeros are added only when labels are displayed.
 rules <- rules |>
@@ -19,11 +39,11 @@ rules <- rules |>
     taxon = trimws(as.character(taxon)),
     
     donor_id = as.integer(
-      trimws(as.character(donor))
+      trimws(as.character(donor_id))
     ),
     
     target_id = as.integer(
-      trimws(as.character(target))
+      trimws(as.character(target_id))
     ),
     
     status = trimws(as.character(status)),
