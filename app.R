@@ -3,7 +3,6 @@ library(dplyr)
 library(sf)
 library(leaflet)
 library(DT)
-library(rnaturalearth)
 
 # Data -----------------------------------------------------------------------
 
@@ -218,19 +217,6 @@ ug_label_points$label_lng <- label_coordinates[, 1]
 ug_label_points$label_lat <- label_coordinates[, 2]
 
 map_bbox <- st_bbox(ug_shape)
-
-background_shape <- rnaturalearth::ne_countries(
-  scale = "medium",
-  continent = "Europe",
-  returnclass = "sf"
-) |>
-  st_transform(4326) |>
-  st_crop(
-    xmin = 4.2,
-    ymin = 46.0,
-    xmax = 16.8,
-    ymax = 56.3
-  )
 
 map_colors <- c(
   other = "#F7F7F7",
@@ -634,7 +620,6 @@ server <- function(input, output, session) {
 
   output$ug_map <- renderLeaflet({
     leaflet(
-      data = background_shape,
       options = leafletOptions(
         zoomControl = FALSE,
         dragging = FALSE,
@@ -646,19 +631,24 @@ server <- function(input, output, session) {
         attributionControl = FALSE
       )
     ) |>
-      addPolygons(
+      addTiles(
+        urlTemplate = paste0(
+          "https://server.arcgisonline.com/ArcGIS/rest/services/",
+          "World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}"
+        ),
         group = "basemap",
-        fillColor = "#ECE9E1",
-        fillOpacity = 1,
-        color = "#A8AFB4",
-        weight = 0.7,
-        opacity = 1,
-        interactive = FALSE
+        options = tileOptions(
+          minZoom = 5,
+          maxZoom = 8,
+          noWrap = TRUE
+        ),
+        attribution = "Esri, USGS, NOAA"
       ) |>
-      setView(
-        lng = 10.5,
-        lat = 51.1,
-        zoom = 6
+      fitBounds(
+        lng1 = unname(map_bbox["xmin"]),
+        lat1 = unname(map_bbox["ymin"]),
+        lng2 = unname(map_bbox["xmax"]),
+        lat2 = unname(map_bbox["ymax"])
       ) |>
       htmlwidgets::onRender(
         "
