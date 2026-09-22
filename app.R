@@ -779,7 +779,7 @@ server <- function(input, output, session) {
 
   output$app_subtitle <- renderText({
     paste0(
-      "Bewertung benachbarter Ursprungsgebiete nach Art oder Taxon",
+      "Art/Taxon-spezifische Bewertung benachbarter Ursprungsgebiete zur Eignung als Ersatzherkünfte",
       " | Datenstand: ",
       data_version
     )
