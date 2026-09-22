@@ -281,6 +281,9 @@ ui <- fluidPage(
         min-height: 320px; max-height: 680px;
         display: flex; flex-direction: column; gap: 8px;
       }
+      .side-picture-column {
+        padding-left: 1px;
+      }
       #admixture_panel {
         flex: 2 1 0; min-height: 0;
       }
@@ -465,8 +468,10 @@ ui <- fluidPage(
         leafletOutput("ug_map", height = "100%")
       )
     ),
+    
     column(
       2,
+      class = "side-picture-column",
       div(
         class = "side-panel-stack",
         uiOutput("admixture_panel"),
@@ -476,6 +481,8 @@ ui <- fluidPage(
         )
       )
     ),
+    
+    
     column(
       5,
       div(
