@@ -6,8 +6,13 @@ library(DT)
 
 # Data -----------------------------------------------------------------------
 
+app_data_file <- file.path(
+  "data",
+  "exchange_rules_app.csv"
+)
+
 rules <- read.csv(
-  file.path("data", "exchange_rules_app.csv"),
+  app_data_file,
   check.names = FALSE,
   stringsAsFactors = FALSE,
   fileEncoding = "UTF-8"
@@ -25,6 +30,35 @@ if (length(missing_columns) > 0L) {
     paste(missing_columns, collapse = ", ")
   )
 }
+
+if ("data_version" %in% names(rules)) {
+  available_versions <- unique(
+    trimws(as.character(rules$data_version))
+  )
+  available_versions <- available_versions[
+    !is.na(available_versions) & nzchar(available_versions)
+  ]
+
+  data_version <- if (length(available_versions) > 0L) {
+    available_versions[1]
+  } else {
+    format(
+      file.info(app_data_file)$mtime,
+      "%Y-%m-%d %H:%M:%S"
+    )
+  }
+} else {
+  data_version <- format(
+    file.info(app_data_file)$mtime,
+    "%Y-%m-%d %H:%M:%S"
+  )
+}
+
+data_version_file <- gsub(
+  "[^0-9-]",
+  "",
+  substr(data_version, 1, 10)
+)
 
 as_app_logical <- function(x) {
   case_when(
@@ -178,7 +212,9 @@ ui <- fluidPage(
       .container-fluid { padding: 7px 12px; }
       h2 { margin: 3px 0 1px 0; font-size: 23px; }
       h4 { margin: 4px 0 6px 0; font-size: 15px; }
-      .app-subtitle { color: #5f6368; margin-bottom: 6px; }
+      .app-subtitle { color: #5f6368; margin-bottom: 6px; font-size: 12px; }
+      .selectize-control { z-index: 2000 !important; }
+      .selectize-dropdown { z-index: 20000 !important; }
 
       .control-row {
         background: #f5f6f7; border-radius: 7px;
@@ -201,7 +237,7 @@ ui <- fluidPage(
 
       .map-panel {
         width: 100%; max-width: 555px; margin: 0 auto;
-        border: 1px solid #d9dde1; border-radius: 7px;
+        border: 2px solid #68737d; border-radius: 7px;
         overflow: hidden; background: #eef2f3;
       }
       .leaflet-container { background: #eef2f3 !important; }
@@ -244,6 +280,14 @@ ui <- fluidPage(
         padding: 5px 7px;
       }
 
+      .cite-box {
+        margin-top: 8px; padding: 7px 9px;
+        border: 1px solid #d9dde1; border-radius: 7px;
+        background: #f7f8f9; color: #454b50;
+        font-size: 10px; line-height: 1.35;
+      }
+      .cite-box ul { margin: 4px 0 0 16px; padding: 0; }
+
       .ug-number-label {
         background: rgba(255,255,255,0.70);
         border: 0; box-shadow: none;
@@ -257,7 +301,7 @@ ui <- fluidPage(
   h2("Ersatzherkünfte für Regiosaatgut"),
   div(
     class = "app-subtitle",
-    "Bewertung benachbarter Ursprungsgebiete nach Art oder Taxon"
+    textOutput("app_subtitle", inline = TRUE)
   ),
 
   fluidRow(
@@ -293,7 +337,6 @@ ui <- fluidPage(
   fluidRow(
     column(
       4,
-      h4(textOutput("selection_text")),
       div(
         class = "map-panel",
         leafletOutput("ug_map", height = "620px")
@@ -305,6 +348,21 @@ ui <- fluidPage(
         class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
         DTOutput("results")
+      ),
+      div(
+        class = "cite-box",
+        tags$strong("Bitte zitieren Sie:"),
+        tags$ul(
+          tags$li(
+            "NuL-Publikation zu den genetisch begründeten ",
+            "Austauschregeln (bibliographische Angaben nach ",
+            "Erscheinen ergänzen)."
+          ),
+          tags$li(
+            "BfN-Bericht zum RegioDiv-Projekt ",
+            "(vollständige bibliographische Angaben ergänzen)."
+          )
+        )
       )
     )
   )
@@ -416,12 +474,11 @@ server <- function(input, output, session) {
       )
   })
 
-  output$selection_text <- renderText({
-    req(input$taxon, input$target)
+  output$app_subtitle <- renderText({
     paste0(
-      unname(taxon_labels[[input$taxon]]),
-      " – Zielgebiet UG ",
-      sprintf("%02d", as.integer(input$target))
+      "Bewertung benachbarter Ursprungsgebiete nach Art oder Taxon",
+      " | Datenstand: ",
+      data_version
     )
   })
 
@@ -439,8 +496,8 @@ server <- function(input, output, session) {
       )
     ) |>
       addTiles(
-        urlTemplate = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        urlTemplate = "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+        attribution = 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors; map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
         options = tileOptions(noWrap = TRUE)
       ) |>
       setView(
@@ -572,12 +629,10 @@ server <- function(input, output, session) {
       addControl(
         html = paste0(
           "<div class='map-instructions'>",
-          "<strong>Kartenbedienung</strong><br>",
-          "Mit der Maus: Details anzeigen<br>",
           "Rechtsklick: UG als Ziel wählen",
           "</div>"
         ),
-        position = "topleft",
+        position = "bottomleft",
         className = "map-instructions-wrapper"
       )
 
@@ -602,14 +657,25 @@ server <- function(input, output, session) {
         Herkunftsgebiet = sprintf("UG %02d", donor_id),
         Bewertung = display_decision,
         N_donor = n_donor,
-        N_target = n_target
+        N_target = n_target,
+        Datenstand = data_version
       )
 
     names(result) <- c(
       "Herkunftsgebiet",
       "Bewertung",
       "N donor",
-      "N target"
+      "N target",
+      "Datenstand"
+    )
+
+    export_filename <- paste0(
+      "Austauschregeln_",
+      input$taxon,
+      "_UG",
+      sprintf("%02d", as.integer(input$target)),
+      "_",
+      data_version_file
     )
 
     validate(
@@ -625,7 +691,28 @@ server <- function(input, output, session) {
       extensions = "Buttons",
       options = list(
         dom = "Bt",
-        buttons = c("copy", "csv", "excel"),
+        buttons = list(
+          list(
+            extend = "copy",
+            text = "Kopieren",
+            exportOptions = list(columns = 0:4)
+          ),
+          list(
+            extend = "csv",
+            text = "CSV",
+            filename = export_filename,
+            exportOptions = list(columns = 0:4)
+          ),
+          list(
+            extend = "excel",
+            text = "Excel",
+            filename = export_filename,
+            exportOptions = list(columns = 0:4)
+          )
+        ),
+        columnDefs = list(
+          list(targets = 4, visible = FALSE)
+        ),
         paging = FALSE,
         searching = FALSE,
         info = FALSE,
