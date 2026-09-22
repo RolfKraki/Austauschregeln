@@ -10,11 +10,11 @@ library(here)
 # ------------------------------------------------------------------
 # 1. File paths
 # ------------------------------------------------------------------
-source_file <- file.path("C:/Users/michal/Nextcloud4/Cloud/RegioDiv/Data4d/meanPairwisePCA4neighbors_v4d_tables.RData")
+source_file <- file.path(paste0(here(),"/Data/meanPairwisePCA4neighbors_v4d_tables.RData"))
 date_tag <- format(Sys.Date(), "%Y-%m-%d")
 long_file <- file.path(paste0(here(),"/exchange_rules_long_", date_tag, ".csv"))
 app_file <- file.path(paste0(here(),"/exchange_rules_app_", date_tag, ".csv"))
-app_dir <- file.path(paste0(here(),"/Austauschregeln_App"))
+app_dir <- file.path(here())
 
 # ------------------------------------------------------------------
 # 2. Load the RData file safely
