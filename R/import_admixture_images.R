@@ -93,15 +93,6 @@ import_log <- lapply(image_taxa, function(taxon) {
   image <- magick::image_trim(image, fuzz = 8)
   image <- magick::image_resize(image, "300x440>")
 
-  # A limited palette is sufficient for these maps and considerably reduces
-  # the GitHub repository size.
-  image <- magick::image_quantize(
-    image,
-    max = 128,
-    colorspace = "rgb",
-    dither = TRUE
-  )
-
   magick::image_write(
     image,
     path = destination_file,
