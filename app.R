@@ -418,6 +418,11 @@ ui <- fluidPage(
         color: #777f85; font-weight: 600; font-size: 9px;
         padding: 0 2px;
       }
+      .ug-number-label-white {
+        background: rgba(40,40,40,0.18);
+        color: #ffffff;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      }
       "
     ))
   ),
@@ -603,8 +608,8 @@ server <- function(input, output, session) {
       explanation <- tagList(
         tags$strong("Referenzwert: K = 1. "),
         "Der Referenzwert für die Austauschentscheidung basiert hier auf ",
-        "den Unterschieden zwischen den UGs; eine interpolierte ",
-        "Admixture-Clusterkarte ist daher nicht verfügbar."
+        "den mittleren Unterschieden zwischen den UGs, da keine distinkte ",
+        "räumlich-genetische Struktur gefunden wurde."
       )
     } else {
       file_name <- paste0(input$taxon, "_K", k, ".png")
@@ -848,6 +853,14 @@ server <- function(input, output, session) {
   observe({
     polygons <- map_data()
 
+    label_data <- ug_label_points |>
+      left_join(
+        polygons |>
+          st_drop_geometry() |>
+          select(ug_id, map_class),
+        by = "ug_id"
+      )
+
     leafletProxy(
       "ug_map",
       data = polygons,
@@ -874,7 +887,7 @@ server <- function(input, output, session) {
         )
       ) |>
       addLabelOnlyMarkers(
-        data = ug_label_points,
+        data = label_data |> filter(map_class == "other"),
         group = "decision",
         lng = ~label_lng,
         lat = ~label_lat,
@@ -884,6 +897,20 @@ server <- function(input, output, session) {
           direction = "center",
           textOnly = TRUE,
           className = "ug-number-label"
+        ),
+        options = markerOptions(interactive = FALSE)
+      ) |>
+      addLabelOnlyMarkers(
+        data = label_data |> filter(map_class != "other"),
+        group = "decision",
+        lng = ~label_lng,
+        lat = ~label_lat,
+        label = ~sprintf("%02d", ug_id),
+        labelOptions = labelOptions(
+          noHide = TRUE,
+          direction = "center",
+          textOnly = TRUE,
+          className = "ug-number-label ug-number-label-white"
         ),
         options = markerOptions(interactive = FALSE)
       ) |>
