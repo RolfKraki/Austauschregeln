@@ -1,0 +1,26 @@
+# R and RStudio
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# Sensitive local configuration
+.Renviron
+.env
+
+# Generated and temporary files
+*.RData
+*.rds
+*.RDS
+*.log
+*_cache/
+rsconnect/
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# renv local library
+renv/library/
+renv/staging/
