@@ -348,16 +348,6 @@ server <- function(input, output, session) {
     }
   })
 
-  observeEvent(input$ug_map_shape_click, {
-    clicked_ug <- suppressWarnings(
-      as.integer(input$ug_map_shape_click$id)
-    )
-
-    if (!is.na(clicked_ug)) {
-      updateSelectInput(session, "target", selected = clicked_ug)
-    }
-  })
-
   selected_rules <- reactive({
     req(input$taxon, input$target)
 
