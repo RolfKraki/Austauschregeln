@@ -3,6 +3,7 @@ library(dplyr)
 library(sf)
 library(leaflet)
 library(DT)
+library(rnaturalearth)
 
 # Data -----------------------------------------------------------------------
 
@@ -143,6 +144,32 @@ taxon_choices <- setNames(
   unname(taxon_labels)
 )
 
+kopt_min <- c(
+  "ACH.AGG" = 2, "ACH.MIL" = 1, "ACH.PRA" = 2,
+  "AGR.EUP" = 4, "AGR.CAP" = 2, "ANT.ODO" = 3,
+  "ARR.ELA" = 2, "BIS.OFF" = 3, "BRO.ERE" = 2,
+  "CAM.ROT" = 2, "CAM.R2x" = 4, "CAM.R4x" = 2,
+  "CEN.JAC" = 4, "COR.CAN" = 4, "CYN.CRI" = 2,
+  "EUP.CYP" = 2, "EUP.C4x" = 4,
+  "FES.RUB" = 2, "FES.NIG" = 2, "FES.RRU" = 1,
+  "FIL.ULM" = 3, "GAL.ALB" = 4, "HYP.RAD" = 2,
+  "KNA.A4x" = 5, "LAT.PRA" = 3,
+  "LEU.AGG" = 2, "LEU.IRC" = 3, "LEU.VUL" = 1,
+  "LOT.COR" = 2, "LYC.FLO" = 4,
+  "PIM.SAX" = 2, "PIM.S2x" = 2, "PIM.S4x" = 2,
+  "PRU.VUL" = 4, "RAN.ACR" = 3, "SAL.PRA" = 4,
+  "SIL.VUL" = 2, "THY.PUL" = 4,
+  "TRA.AGG" = 2, "TRA.PRA" = 4, "TRA.ORI" = 2
+)
+
+missing_k <- setdiff(taxa, names(kopt_min))
+if (length(missing_k) > 0L) {
+  stop(
+    "Missing kopt_min values for taxa: ",
+    paste(missing_k, collapse = ", ")
+  )
+}
+
 # Map polygons ---------------------------------------------------------------
 
 shape_file <- file.path(
@@ -192,6 +219,19 @@ ug_label_points$label_lat <- label_coordinates[, 2]
 
 map_bbox <- st_bbox(ug_shape)
 
+background_shape <- rnaturalearth::ne_countries(
+  scale = "medium",
+  continent = "Europe",
+  returnclass = "sf"
+) |>
+  st_transform(4326) |>
+  st_crop(
+    xmin = 4.2,
+    ymin = 46.0,
+    xmax = 16.8,
+    ymax = 56.3
+  )
+
 map_colors <- c(
   other = "#F7F7F7",
   neighbor = "#BDBDBD",
@@ -228,25 +268,48 @@ ui <- fluidPage(
       }
       .taxon-select { flex: 1 1 auto; min-width: 0; }
       .species-thumbnail {
-        flex: 0 0 62px; width: 62px; height: 62px;
+        flex: 0 0 118px; width: 118px; height: 78px;
         border: 1px dashed #aeb4b9; border-radius: 6px;
         background: #fafafa;
         display: flex; align-items: center; justify-content: center;
         color: #9aa0a6; font-size: 9px; margin-bottom: 5px;
+        overflow: hidden;
+      }
+      .species-thumbnail img {
+        width: 100%; height: 100%; object-fit: contain;
+      }
+      .species-thumbnail .shiny-plot-output {
+        width: 100% !important; height: 100% !important;
       }
 
       .map-panel {
         width: 100%; max-width: 555px; margin: 0 auto;
+        height: calc(100vh - 125px);
+        min-height: 340px; max-height: 700px;
         border: 2px solid #68737d; border-radius: 7px;
         overflow: hidden; background: #eef2f3;
       }
-      .leaflet-container { background: #eef2f3 !important; }
+      .leaflet-container {
+        height: 100% !important;
+        background: #dceaf3 !important;
+      }
 
       .table-panel {
         border: 1px solid #d9dde1; border-radius: 7px;
         padding: 7px 9px; background: white;
       }
-      .table-panel table { font-size: 12px; margin-bottom: 0; }
+      .table-panel table {
+        width: 100% !important;
+        font-size: 12px; margin-bottom: 0;
+      }
+      .table-panel table th,
+      .table-panel table td {
+        white-space: nowrap !important;
+      }
+      .table-panel table th:nth-child(2),
+      .table-panel table td:nth-child(2) {
+        min-width: 205px;
+      }
       .table-panel .table > thead > tr > th,
       .table-panel .table > tbody > tr > td {
         padding: 4px 5px;
@@ -281,7 +344,8 @@ ui <- fluidPage(
       }
 
       .cite-box {
-        margin-top: 8px; padding: 7px 9px;
+        position: fixed; right: 12px; bottom: 12px;
+        width: 390px; padding: 7px 9px; z-index: 1200;
         border: 1px solid #d9dde1; border-radius: 7px;
         background: #f7f8f9; color: #454b50;
         font-size: 10px; line-height: 1.35;
@@ -289,9 +353,9 @@ ui <- fluidPage(
       .cite-box ul { margin: 4px 0 0 16px; padding: 0; }
 
       .ug-number-label {
-        background: rgba(255,255,255,0.70);
+        background: rgba(255,255,255,0.38);
         border: 0; box-shadow: none;
-        color: #303030; font-weight: 700; font-size: 10px;
+        color: #777f85; font-weight: 600; font-size: 9px;
         padding: 0 2px;
       }
       "
@@ -307,7 +371,7 @@ ui <- fluidPage(
   fluidRow(
     class = "control-row",
     column(
-      5,
+      6,
       div(
         class = "taxon-with-thumb",
         div(
@@ -321,7 +385,7 @@ ui <- fluidPage(
         ),
         div(
           class = "species-thumbnail",
-          "Artenbild"
+          uiOutput("cluster_thumbnail")
         )
       )
     ),
@@ -331,6 +395,11 @@ ui <- fluidPage(
         "target", "Ziel-UG",
         choices = NULL, width = "100%"
       )
+    ),
+    column(
+      4,
+      tags$strong("Schwellenwert:"),
+      textOutput("cluster_info", inline = TRUE)
     )
   ),
 
@@ -339,7 +408,7 @@ ui <- fluidPage(
       4,
       div(
         class = "map-panel",
-        leafletOutput("ug_map", height = "620px")
+        leafletOutput("ug_map", height = "100%")
       )
     ),
     column(
@@ -379,11 +448,24 @@ server <- function(input, output, session) {
       arrange(target_id) |>
       pull(target_id)
 
+    previous_target <- isolate(
+      suppressWarnings(as.integer(input$target))
+    )
+
+    selected_target <- if (
+      !is.na(previous_target) &&
+      previous_target %in% targets
+    ) {
+      previous_target
+    } else {
+      targets[1]
+    }
+
     updateSelectInput(
       session,
       "target",
       choices = setNames(targets, sprintf("UG %02d", targets)),
-      selected = targets[1]
+      selected = selected_target
     )
   }, ignoreInit = FALSE)
 
@@ -405,6 +487,74 @@ server <- function(input, output, session) {
       )
     }
   })
+
+  output$cluster_info <- renderText({
+    req(input$taxon)
+    k <- unname(kopt_min[[input$taxon]])
+
+    if (is.na(k)) {
+      "nicht bestimmt"
+    } else if (k == 1) {
+      "K = 1 (UG-basierter Schwellenwert)"
+    } else {
+      paste0("K = ", k, " Admixture-Cluster")
+    }
+  })
+
+  output$cluster_thumbnail <- renderUI({
+    req(input$taxon)
+    k <- unname(kopt_min[[input$taxon]])
+
+    if (is.na(k) || k == 1) {
+      plotOutput(
+        "cluster_shape",
+        width = "112px",
+        height = "74px"
+      )
+    } else {
+      file_name <- paste0(
+        input$taxon,
+        "_K",
+        k,
+        ".png"
+      )
+
+      local_file <- file.path(
+        "www",
+        "admixture",
+        file_name
+      )
+
+      if (file.exists(local_file)) {
+        tags$img(
+          src = file.path("admixture", file_name),
+          alt = paste0(
+            taxon_labels[[input$taxon]],
+            ", K = ",
+            k
+          )
+        )
+      } else {
+        tags$span(
+          paste0("K = ", k, ": Bild fehlt")
+        )
+      }
+    }
+  })
+
+  output$cluster_shape <- renderPlot({
+    plot(
+      st_geometry(ug_shape),
+      col = "#D8DDE1",
+      border = "#7C858C",
+      lwd = 0.4,
+      axes = FALSE,
+      reset = FALSE
+    )
+  },
+  bg = "transparent",
+  res = 110
+  )
 
   selected_rules <- reactive({
     req(input$taxon, input$target)
@@ -484,6 +634,7 @@ server <- function(input, output, session) {
 
   output$ug_map <- renderLeaflet({
     leaflet(
+      data = background_shape,
       options = leafletOptions(
         zoomControl = FALSE,
         dragging = FALSE,
@@ -492,13 +643,17 @@ server <- function(input, output, session) {
         boxZoom = FALSE,
         keyboard = FALSE,
         touchZoom = FALSE,
-        attributionControl = TRUE
+        attributionControl = FALSE
       )
     ) |>
-      addTiles(
-        urlTemplate = "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-        attribution = 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors; map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
-        options = tileOptions(noWrap = TRUE)
+      addPolygons(
+        group = "basemap",
+        fillColor = "#ECE9E1",
+        fillOpacity = 1,
+        color = "#A8AFB4",
+        weight = 0.7,
+        opacity = 1,
+        interactive = FALSE
       ) |>
       setView(
         lng = 10.5,
@@ -576,10 +731,10 @@ server <- function(input, output, session) {
       data = polygons,
       session = session
     ) |>
-      clearShapes() |>
-      clearMarkers() |>
+      clearGroup("decision") |>
       clearControls() |>
       addPolygons(
+        group = "decision",
         layerId = ~as.character(ug_id),
         fillColor = ~fill_color,
         fillOpacity = 1,
@@ -598,6 +753,7 @@ server <- function(input, output, session) {
       ) |>
       addLabelOnlyMarkers(
         data = ug_label_points,
+        group = "decision",
         lng = ~label_lng,
         lat = ~label_lat,
         label = ~sprintf("%02d", ug_id),
@@ -711,15 +867,20 @@ server <- function(input, output, session) {
           )
         ),
         columnDefs = list(
+          list(targets = 0, width = "105px"),
+          list(targets = 1, width = "235px"),
+          list(targets = c(2, 3), width = "75px"),
           list(targets = 4, visible = FALSE)
         ),
+        scrollX = TRUE,
         paging = FALSE,
         searching = FALSE,
         info = FALSE,
         ordering = FALSE,
         autoWidth = TRUE
       ),
-      class = "compact stripe hover"
+      class = "compact stripe hover",
+      width = "100%"
     )
   })
 
