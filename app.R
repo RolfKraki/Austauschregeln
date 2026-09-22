@@ -410,7 +410,7 @@ ui <- fluidPage(
     ),
     column(
       4,
-      tags$strong("Schwellenwert:"),
+      tags$strong("Referenzwert:"),
       textOutput("cluster_info", inline = TRUE)
     )
   ),
