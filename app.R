@@ -350,7 +350,7 @@ ui <- fluidPage(
       }
 
       .map-panel {
-        width: 100%; max-width: 555px; margin: 0 0 0 auto;
+        width: 100%; max-width: none; margin: 0;
         height: calc(100vh - 165px);
         min-height: 320px; max-height: 680px;
         border: 2px solid #68737d; border-radius: 7px;
@@ -462,7 +462,7 @@ ui <- fluidPage(
 
   fluidRow(
     column(
-      5,
+      4,
       div(
         class = "map-panel",
         leafletOutput("ug_map", height = "100%")
@@ -484,7 +484,7 @@ ui <- fluidPage(
     
     
     column(
-      5,
+      6,
       div(
         class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
