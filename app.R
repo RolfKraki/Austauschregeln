@@ -398,6 +398,19 @@ ui <- fluidPage(
         width: 11px; height: 11px; margin-right: 4px;
       }
 
+      .map-title-box {
+        max-width: 255px;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid #c8cdd1;
+        border-radius: 5px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+        color: #30363b;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.3;
+        padding: 5px 7px;
+      }
+
       .map-instructions {
         max-width: 180px;
         background: rgba(255,255,255,0.92);
@@ -441,26 +454,6 @@ ui <- fluidPage(
   ),
 
   fluidRow(
-    class = "control-row",
-    column(
-      8,
-      selectInput(
-        "taxon", "Art oder Taxon",
-        choices = taxon_choices,
-        selected = taxa[1],
-        width = "100%"
-      )
-    ),
-    column(
-      4,
-      selectInput(
-        "target", "Ziel-UG",
-        choices = NULL, width = "100%"
-      )
-    )
-  ),
-
-  fluidRow(
     column(
       4,
       div(
@@ -485,6 +478,26 @@ ui <- fluidPage(
     
     column(
       6,
+      fluidRow(
+        class = "control-row",
+        column(
+          8,
+          selectInput(
+            "taxon", "Art oder Taxon (Bitte selektieren)",
+            choices = taxon_choices,
+            selected = taxa[1],
+            width = "100%"
+          )
+        ),
+        column(
+          4,
+          selectInput(
+            "target", "Ziel-UG",
+            choices = NULL,
+            width = "100%"
+          )
+        )
+      ),
       div(
         class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
@@ -950,6 +963,17 @@ server <- function(input, output, session) {
         ),
         position = "bottomleft",
         className = "map-instructions-wrapper"
+      ) |>
+      addControl(
+        html = paste0(
+          "<div class='map-title-box'>",
+          "Ursprungsgebiete für regionales gebietseigenes Saat- und ",
+          "Pflanzgut krautiger Arten nach ErMiV ",
+          "(Anlage zu § 2 Nummer 6 und 7)",
+          "</div>"
+        ),
+        position = "topleft",
+        className = "map-title-wrapper"
       )
 
   })
