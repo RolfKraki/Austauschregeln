@@ -512,6 +512,10 @@ server <- function(input, output, session) {
           map.on('layeradd', function(e) {
             bindRightClick(e.layer);
           });
+
+          map.eachLayer(function(layer) {
+            bindRightClick(layer);
+          });
         }
         "
       )
