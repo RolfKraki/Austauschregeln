@@ -273,7 +273,7 @@ ui <- fluidPage(
       }
       .admixture-panel {
         height: 100%; min-height: 0;
-        border: 1px solid #c8cdd1; border-radius: 7px;
+        border: 2px solid #68737d; border-radius: 7px;
         padding: 6px; background: #f7f8f9;
         display: flex; flex-direction: column;
       }
@@ -395,7 +395,7 @@ ui <- fluidPage(
     column(
       8,
       selectInput(
-        "taxon", "Art oder Taxon (Bitte selektieren)",
+        "taxon", "Art oder Taxon",
         choices = taxon_choices,
         selected = taxa[1],
         width = "100%"
