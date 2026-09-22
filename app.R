@@ -249,17 +249,16 @@ ui <- fluidPage(
       .control-row .form-group { margin-bottom: 5px; }
       .control-row label { font-size: 12px; margin-bottom: 2px; }
 
-      .taxon-with-thumb {
-        display: flex; align-items: flex-end; gap: 8px;
-      }
-      .taxon-select { flex: 1 1 auto; min-width: 0; }
       .species-thumbnail {
-        flex: 0 0 118px; width: 118px; height: 78px;
-        border: 1px dashed #aeb4b9; border-radius: 6px;
+        width: 100%; height: 115px; margin-top: 8px;
+        border: 2px solid #68737d; border-radius: 7px;
         background: #fafafa;
         display: flex; align-items: center; justify-content: center;
-        color: #9aa0a6; font-size: 9px; margin-bottom: 5px;
+        color: #8a9298; font-size: 10px;
         overflow: hidden;
+      }
+      .species-thumbnail img {
+        width: 100%; height: 100%; object-fit: contain;
       }
       .admixture-panel {
         border: 1px solid #c8cdd1; border-radius: 7px;
@@ -271,8 +270,8 @@ ui <- fluidPage(
       }
       .admixture-map {
         width: 100%;
-        height: calc((100vh - 125px) / 3);
-        min-height: 160px; max-height: 230px;
+        height: calc((100vh - 165px) / 3);
+        min-height: 175px; max-height: 225px;
         background: white; border: 1px solid #d9dde1;
         border-radius: 5px; overflow: hidden;
         display: flex; align-items: center; justify-content: center;
@@ -296,8 +295,8 @@ ui <- fluidPage(
 
       .map-panel {
         width: 100%; max-width: 555px; margin: 0 auto;
-        height: calc(100vh - 125px);
-        min-height: 340px; max-height: 700px;
+        height: calc(100vh - 165px);
+        min-height: 320px; max-height: 680px;
         border: 2px solid #68737d; border-radius: 7px;
         overflow: hidden; background: #eef2f3;
       }
@@ -383,35 +382,20 @@ ui <- fluidPage(
   fluidRow(
     class = "control-row",
     column(
-      6,
-      div(
-        class = "taxon-with-thumb",
-        div(
-          class = "taxon-select",
-          selectInput(
-            "taxon", "Art oder Taxon",
-            choices = taxon_choices,
-            selected = taxa[1],
-            width = "100%"
-          )
-        ),
-        div(
-          class = "species-thumbnail",
-          tags$span("Artenbild")
-        )
-      )
-    ),
-    column(
-      2,
+      8,
       selectInput(
-        "target", "Ziel-UG",
-        choices = NULL, width = "100%"
+        "taxon", "Art oder Taxon",
+        choices = taxon_choices,
+        selected = taxa[1],
+        width = "100%"
       )
     ),
     column(
       4,
-      tags$strong("Referenzwert:"),
-      textOutput("cluster_info", inline = TRUE)
+      selectInput(
+        "target", "Ziel-UG",
+        choices = NULL, width = "100%"
+      )
     )
   ),
 
@@ -425,7 +409,11 @@ ui <- fluidPage(
     ),
     column(
       2,
-      uiOutput("admixture_panel")
+      uiOutput("admixture_panel"),
+      div(
+        class = "species-thumbnail",
+        tags$span("Artenbild")
+      )
     ),
     column(
       5,
@@ -501,19 +489,6 @@ server <- function(input, output, session) {
         "target",
         selected = clicked_ug
       )
-    }
-  })
-
-  output$cluster_info <- renderText({
-    req(input$taxon)
-    k <- unname(kopt_min[[input$taxon]])
-
-    if (is.na(k)) {
-      "nicht bestimmt"
-    } else if (k == 1) {
-      "K = 1 (UG-basierter Schwellenwert)"
-    } else {
-      paste0("K = ", k, " Admixture-Cluster")
     }
   })
 
@@ -595,17 +570,26 @@ server <- function(input, output, session) {
   })
 
   output$cluster_shape <- renderPlot({
+    old_par <- par(
+      mar = c(0, 0, 0, 0),
+      oma = c(0, 0, 0, 0),
+      xaxs = "i",
+      yaxs = "i"
+    )
+    on.exit(par(old_par), add = TRUE)
+
     plot(
       st_geometry(ug_shape),
       col = "#D8DDE1",
-      border = "#7C858C",
-      lwd = 0.4,
+      border = "#68737d",
+      lwd = 0.7,
       axes = FALSE,
       reset = FALSE
     )
   },
   bg = "transparent",
-  res = 110
+  res = 110,
+  execOnResize = TRUE
   )
 
   selected_rules <- reactive({
