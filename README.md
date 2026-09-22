@@ -12,6 +12,9 @@ target origin region (UG).
 - `data/exchange_rules_app.csv`: stable app-ready dataset.
 - `data/output/`: local dated diagnostic exports; not committed.
 - `data/shp/`: polygon data for the 22 Ursprungsgebiete.
+- `R/import_admixture_images.R`: one-time import and whitespace trimming of the
+  taxon-specific Admixture PNGs.
+- `www/admixture/`: processed PNGs served by Shiny.
 
 ## Required R packages
 
@@ -25,7 +28,8 @@ install.packages(c(
   "here",
   "sf",
   "leaflet",
-  "DT"
+  "DT",
+  "magick"
 ))
 ```
 
@@ -49,3 +53,17 @@ shiny::runApp()
 The map uses definitive green and orange-red colors for evaluated neighboring
 UGs. Pale colors indicate provisional decisions where the donor or target
 sample size is below five.
+
+## Import the Admixture images once
+
+The application expects images named `<TAXON>_K<K>.png` in
+`www/admixture/`. From the project root, run:
+
+```r
+source("R/import_admixture_images.R")
+```
+
+The script reads the original PNGs below the configured local `Data4d`
+folder, removes uniform outer whitespace, reduces oversized images, and leaves
+the originals untouched. Taxa with `K = 1` do not need an image; the app shows
+the UG outline instead.
