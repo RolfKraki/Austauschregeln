@@ -72,17 +72,45 @@ import_log <- lapply(image_taxa, function(taxon) {
 
   image <- magick::image_read(source_file)
 
-  # Remove uniform outer whitespace. This is deliberately non-destructive:
-  # it does not guess at geographic coordinates or cut into the plotted map.
-  image <- magick::image_trim(image, fuzz = 8)
+  # The source plots use a common layout: the taxon title and K label occupy
+  # the upper 15%, while the actual map begins below that band.
+  image_info <- magick::image_info(image)
+  crop_top <- floor(image_info$height * 0.15)
 
-  # Standardize the displayed asset while preserving its aspect ratio.
-  image <- magick::image_resize(image, "900x1100>")
+  image <- magick::image_crop(
+    image,
+    geometry = magick::geometry_area(
+      width = image_info$width,
+      height = image_info$height - crop_top,
+      x_off = 0,
+      y_off = crop_top
+    ),
+    repage = TRUE
+  )
+
+  # Remove remaining uniform outer whitespace, preserve aspect ratio, and
+  # keep only the resolution required by the small app preview.
+  image <- magick::image_trim(image, fuzz = 8)
+  image <- magick::image_resize(image, "300x440>")
+
+  # A limited palette is sufficient for these maps and considerably reduces
+  # the GitHub repository size.
+  image <- magick::image_quantize(
+    image,
+    max = 128,
+    colorspace = "rgb",
+    dither = TRUE
+  )
 
   magick::image_write(
     image,
     path = destination_file,
-    format = "png"
+    format = "png",
+    depth = 8,
+    defines = c(
+      "png:compression-level" = "9",
+      "png:compression-filter" = "5"
+    )
   )
 
   data.frame(
