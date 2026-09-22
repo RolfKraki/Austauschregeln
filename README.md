@@ -6,13 +6,13 @@ target origin region (UG).
 ## Project structure
 
 - `app.R`: Shiny application with interactive UG map and compact results table.
-- `R/create_csv_from_exchange_matrices.R`: validates the analytical result
+- `scripts/create_csv_from_exchange_matrices.R`: validates the analytical result
   object and generates the app data.
 - `data/input/`: local input object; the `.RData` file is not committed.
 - `data/exchange_rules_app.csv`: stable app-ready dataset.
 - `data/output/`: local dated diagnostic exports; not committed.
 - `data/shp/`: polygon data for the 22 Ursprungsgebiete.
-- `R/import_admixture_images.R`: one-time import and whitespace trimming of the
+- `scripts/import_admixture_images.R`: one-time import and whitespace trimming of the
   taxon-specific Admixture PNGs.
 - `www/admixture/`: processed PNGs served by Shiny.
 
@@ -39,12 +39,15 @@ Copy `meanPairwisePCA4neighbors_v4d_tables.RData` into `data/input/`, then
 run from the project root:
 
 ```r
-source("R/create_csv_from_exchange_matrices.R")
+source("scripts/create_csv_from_exchange_matrices.R")
 ```
 
 This writes the stable Shiny input to `data/exchange_rules_app.csv`.
 
 ## Run the app
+
+The one-time scripts are deliberately stored outside `R/`, because Shiny
+automatically sources `.R` files in that directory when the app starts.
 
 ```r
 shiny::runApp()
@@ -60,7 +63,7 @@ The application expects images named `<TAXON>_K<K>.png` in
 `www/admixture/`. From the project root, run:
 
 ```r
-source("R/import_admixture_images.R")
+source("scripts/import_admixture_images.R")
 ```
 
 The script reads the original PNGs below the configured local `Data4d`
