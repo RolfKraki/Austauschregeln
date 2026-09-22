@@ -24,3 +24,10 @@ desktop.ini
 # renv local library
 renv/library/
 renv/staging/
+
+# Local analytical inputs and generated diagnostics
+data/input/*
+!data/input/README.md
+data/output/
+exchange_rules_long_*.csv
+exchange_rules_app_*.csv
