@@ -424,7 +424,7 @@ ui <- fluidPage(
       ),
       div(
         class = "cite-box",
-        tags$strong("Bitte zitieren Sie:"),
+        tags$strong("Bei Verwendung bitte zitieren:"),
         tags$ul(
           tags$li(
             "NuL-Publikation zu den genetisch begründeten ",
