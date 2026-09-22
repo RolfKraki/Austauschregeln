@@ -99,19 +99,34 @@ map_colors <- c(
 
 ui <- fluidPage(
   tags$head(
-    tags$style(HTML(
+    tags$style(htmltools::HTML(
       "
-      .app-subtitle { color: #5f6368; margin-bottom: 18px; }
-      .control-panel {
-        background: #f5f6f7; border-radius: 8px;
-        padding: 16px; margin-bottom: 16px;
+      body { overflow-y: auto; }
+      .container-fluid { padding: 8px 14px; }
+      h2 { margin: 4px 0 2px 0; font-size: 24px; }
+      h4 { margin: 5px 0 7px 0; font-size: 16px; }
+      .app-subtitle { color: #5f6368; margin-bottom: 8px; }
+      .control-row {
+        background: #f5f6f7; border-radius: 7px;
+        padding: 7px 10px 1px 10px; margin-bottom: 8px;
       }
+      .control-row .form-group { margin-bottom: 6px; }
+      .control-row label { font-size: 12px; margin-bottom: 2px; }
       .map-panel {
-        border: 1px solid #d9dde1; border-radius: 8px;
-        overflow: hidden; background: white;
+        border: 1px solid #d9dde1; border-radius: 7px;
+        overflow: hidden; background: #eef2f3;
       }
-      .results-table { margin-top: 14px; max-width: 760px; }
-      .results-table table { font-size: 13px; }
+      .leaflet-container { background: #eef2f3 !important; }
+      .table-panel {
+        border: 1px solid #d9dde1; border-radius: 7px;
+        padding: 7px 9px; background: white;
+      }
+      .table-panel table { font-size: 12px; margin-bottom: 0; }
+      .table-panel .table > thead > tr > th,
+      .table-panel .table > tbody > tr > td {
+        padding: 4px 5px;
+      }
+      .map-help { color: #5f6368; font-size: 12px; margin-top: 5px; }
       "
     ))
   ),
@@ -123,35 +138,46 @@ ui <- fluidPage(
   ),
 
   fluidRow(
+    class = "control-row",
     column(
       3,
-      div(
-        class = "control-panel",
-        selectInput(
-          "taxon", "Art oder Taxon",
-          choices = taxa, selected = taxa[1], width = "100%"
-        ),
-        selectInput(
-          "target", "Ziel-Ursprungsgebiet",
-          choices = NULL, width = "100%"
-        ),
-        tags$hr(),
-        tags$p(
-          tags$strong("Hinweis:"),
-          " Blasse Farben kennzeichnen vorläufige Bewertungen bei N < 5."
-        )
+      selectInput(
+        "taxon", "Art oder Taxon",
+        choices = taxa, selected = taxa[1], width = "100%"
       )
     ),
-
     column(
-      9,
+      2,
+      selectInput(
+        "target", "Ziel-UG",
+        choices = NULL, width = "100%"
+      )
+    ),
+    column(
+      7,
+      div(
+        class = "map-help",
+        tags$strong("Karte: "),
+        "Mit der Maus werden Details angezeigt. ",
+        "Rechtsklick auf ein UG wählt es als neues Zielgebiet. ",
+        "Blasse Farben kennzeichnen vorläufige Bewertungen bei N < 5."
+      )
+    )
+  ),
+
+  fluidRow(
+    column(
+      8,
       h4(textOutput("selection_text")),
       div(
         class = "map-panel",
-        leafletOutput("ug_map", height = "610px")
-      ),
+        leafletOutput("ug_map", height = "500px")
+      )
+    ),
+    column(
+      4,
       div(
-        class = "results-table",
+        class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
         tableOutput("results")
       )
@@ -177,6 +203,25 @@ server <- function(input, output, session) {
       selected = targets[1]
     )
   }, ignoreInit = FALSE)
+
+  observeEvent(input$ug_map_shape_rightclick, {
+    clicked_ug <- suppressWarnings(
+      as.integer(input$ug_map_shape_rightclick$id)
+    )
+
+    available_targets <- rules |>
+      filter(taxon == input$taxon) |>
+      distinct(target_id) |>
+      pull(target_id)
+
+    if (!is.na(clicked_ug) && clicked_ug %in% available_targets) {
+      updateSelectInput(
+        session,
+        "target",
+        selected = clicked_ug
+      )
+    }
+  })
 
   selected_rules <- reactive({
     req(input$taxon, input$target)
@@ -258,16 +303,25 @@ server <- function(input, output, session) {
   output$ug_map <- renderLeaflet({
     polygons <- map_data()
 
-    leaflet(polygons) |>
-      addProviderTiles(
-        providers$CartoDB.Positron,
-        options = providerTileOptions(noWrap = TRUE)
-      ) |>
+    leaflet(
+      polygons,
+      options = leafletOptions(
+        zoomControl = FALSE,
+        dragging = FALSE,
+        scrollWheelZoom = FALSE,
+        doubleClickZoom = FALSE,
+        boxZoom = FALSE,
+        keyboard = FALSE,
+        touchZoom = FALSE,
+        attributionControl = FALSE
+      )
+    ) |>
       fitBounds(
         unname(map_bbox["xmin"]), unname(map_bbox["ymin"]),
         unname(map_bbox["xmax"]), unname(map_bbox["ymax"])
       ) |>
       addPolygons(
+        layerId = ~as.character(ug_id),
         fillColor = ~fill_color,
         fillOpacity = 0.82,
         color = ~border_color,
@@ -299,6 +353,43 @@ server <- function(input, output, session) {
         ),
         opacity = 0.9,
         title = "Bewertung"
+      ) |>
+      htmlwidgets::onRender(
+        "
+        function(el, x) {
+          var map = this;
+          var registry = map.layerManager._byLayerId || {};
+          var layers = registry.shape || registry;
+
+          Object.keys(layers).forEach(function(key) {
+            var layer = layers[key];
+            var id = key;
+
+            if (!registry.shape) {
+              var parts = key.split('\\n');
+              if (parts.length > 1 && parts[0] !== 'shape') return;
+              id = parts[parts.length - 1];
+            }
+
+            if (!layer || typeof layer.on !== 'function') return;
+
+            layer.on('contextmenu', function(e) {
+              if (e.originalEvent) {
+                L.DomEvent.preventDefault(e.originalEvent);
+              }
+
+              Shiny.setInputValue(
+                el.id + '_shape_rightclick',
+                {
+                  id: id,
+                  nonce: Math.random()
+                },
+                {priority: 'event'}
+              );
+            });
+          });
+        }
+        "
       )
   })
 
