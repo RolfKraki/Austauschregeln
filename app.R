@@ -175,34 +175,37 @@ ui <- fluidPage(
     tags$style(htmltools::HTML(
       "
       body { overflow-y: auto; }
-      .container-fluid { padding: 8px 14px; }
-      h2 { margin: 4px 0 2px 0; font-size: 24px; }
-      h4 { margin: 5px 0 7px 0; font-size: 16px; }
-      .app-subtitle { color: #5f6368; margin-bottom: 8px; }
+      .container-fluid { padding: 7px 12px; }
+      h2 { margin: 3px 0 1px 0; font-size: 23px; }
+      h4 { margin: 4px 0 6px 0; font-size: 15px; }
+      .app-subtitle { color: #5f6368; margin-bottom: 6px; }
+
       .control-row {
         background: #f5f6f7; border-radius: 7px;
-        padding: 7px 10px 1px 10px; margin-bottom: 8px;
+        padding: 5px 9px 0 9px; margin-bottom: 6px;
       }
-      .control-row .form-group { margin-bottom: 6px; }
+      .control-row .form-group { margin-bottom: 5px; }
       .control-row label { font-size: 12px; margin-bottom: 2px; }
+
+      .taxon-with-thumb {
+        display: flex; align-items: flex-end; gap: 8px;
+      }
+      .taxon-select { flex: 1 1 auto; min-width: 0; }
+      .species-thumbnail {
+        flex: 0 0 62px; width: 62px; height: 62px;
+        border: 1px dashed #aeb4b9; border-radius: 6px;
+        background: #fafafa;
+        display: flex; align-items: center; justify-content: center;
+        color: #9aa0a6; font-size: 9px; margin-bottom: 5px;
+      }
+
       .map-panel {
+        width: 100%; max-width: 555px; margin: 0 auto;
         border: 1px solid #d9dde1; border-radius: 7px;
         overflow: hidden; background: #eef2f3;
       }
       .leaflet-container { background: #eef2f3 !important; }
-      .info.legend {
-        font-size: 9px; line-height: 12px;
-        padding: 4px 6px; max-width: 185px;
-      }
-      .info.legend i {
-        width: 11px; height: 11px; margin-right: 4px;
-      }
-      .ug-number-label {
-        background: rgba(255,255,255,0.68);
-        border: 0; box-shadow: none;
-        color: #303030; font-weight: 700; font-size: 10px;
-        padding: 0 2px;
-      }
+
       .table-panel {
         border: 1px solid #d9dde1; border-radius: 7px;
         padding: 7px 9px; background: white;
@@ -212,60 +215,41 @@ ui <- fluidPage(
       .table-panel .table > tbody > tr > td {
         padding: 4px 5px;
       }
-      .map-help { color: #5f6368; font-size: 12px; margin-top: 5px; }
-      .species-image-frame {
-        height: 245px; margin-top: 8px;
-        border: 1px dashed #aeb4b9; border-radius: 7px;
-        background: #fafafa;
-        display: flex; align-items: center; justify-content: center;
-        color: #9aa0a6; font-size: 12px;
+
+      .dt-buttons .dt-button,
+      .dt-buttons .btn {
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+        padding: 2px 6px !important;
+        margin: 0 3px 5px 0 !important;
       }
-      "
-    )),
-    tags$script(htmltools::HTML(
-      "
-      Shiny.addCustomMessageHandler('bindUgRightClick', function(message) {
-        window.setTimeout(function() {
-          if (!window.ugLeafletMaps) return;
 
-          var map = window.ugLeafletMaps[message.mapId];
-          if (!map || !map.layerManager) return;
+      .info.legend {
+        font-size: 9px; line-height: 12px;
+        padding: 4px 6px; max-width: 180px;
+      }
+      .info.legend i {
+        width: 11px; height: 11px; margin-right: 4px;
+      }
 
-          var registry = map.layerManager._byLayerId || {};
-          var layers = registry.shape || registry;
+      .map-instructions {
+        max-width: 180px;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid #c8cdd1;
+        border-radius: 5px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+        color: #3c4043;
+        font-size: 10px;
+        line-height: 1.3;
+        padding: 5px 7px;
+      }
 
-          Object.keys(layers).forEach(function(key) {
-            var layer = layers[key];
-            var id = key;
-
-            if (!registry.shape) {
-              var parts = key.split('\\n');
-              if (parts.length > 1 && parts[0] !== 'shape') return;
-              id = parts[parts.length - 1];
-            }
-
-            if (!layer || typeof layer.on !== 'function') return;
-
-            if (layer._ugContextHandler) {
-              layer.off('contextmenu', layer._ugContextHandler);
-            }
-
-            layer._ugContextHandler = function(e) {
-              if (e.originalEvent) {
-                L.DomEvent.preventDefault(e.originalEvent);
-              }
-
-              Shiny.setInputValue(
-                message.mapId + '_shape_rightclick',
-                {id: id, nonce: Math.random()},
-                {priority: 'event'}
-              );
-            };
-
-            layer.on('contextmenu', layer._ugContextHandler);
-          });
-        }, 75);
-      });
+      .ug-number-label {
+        background: rgba(255,255,255,0.70);
+        border: 0; box-shadow: none;
+        color: #303030; font-weight: 700; font-size: 10px;
+        padding: 0 2px;
+      }
       "
     ))
   ),
@@ -279,10 +263,22 @@ ui <- fluidPage(
   fluidRow(
     class = "control-row",
     column(
-      3,
-      selectInput(
-        "taxon", "Art oder Taxon",
-        choices = taxon_choices, selected = taxa[1], width = "100%"
+      5,
+      div(
+        class = "taxon-with-thumb",
+        div(
+          class = "taxon-select",
+          selectInput(
+            "taxon", "Art oder Taxon",
+            choices = taxon_choices,
+            selected = taxa[1],
+            width = "100%"
+          )
+        ),
+        div(
+          class = "species-thumbnail",
+          "Artenbild"
+        )
       )
     ),
     column(
@@ -291,42 +287,24 @@ ui <- fluidPage(
         "target", "Ziel-UG",
         choices = NULL, width = "100%"
       )
-    ),
-    column(
-      7,
-      div(
-        class = "map-help",
-        tags$strong("Karte: "),
-        "Mit der Maus werden Details angezeigt. ",
-        "Rechtsklick auf ein UG wählt es als neues Zielgebiet. ",
-        "Blasse Farben kennzeichnen vorläufige Bewertungen bei N < 5."
-      )
     )
   ),
 
   fluidRow(
     column(
-      5,
+      4,
       h4(textOutput("selection_text")),
       div(
         class = "map-panel",
-        leafletOutput("ug_map", height = "500px")
+        leafletOutput("ug_map", height = "620px")
       )
     ),
     column(
-      4,
+      8,
       div(
         class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
         DTOutput("results")
-      )
-    ),
-    column(
-      3,
-      h4("Artenbild"),
-      div(
-        class = "species-image-frame",
-        "Bildplatzhalter"
       )
     )
   )
@@ -367,6 +345,16 @@ server <- function(input, output, session) {
         "target",
         selected = clicked_ug
       )
+    }
+  })
+
+  observeEvent(input$ug_map_shape_click, {
+    clicked_ug <- suppressWarnings(
+      as.integer(input$ug_map_shape_click$id)
+    )
+
+    if (!is.na(clicked_ug)) {
+      updateSelectInput(session, "target", selected = clicked_ug)
     }
   })
 
@@ -465,15 +453,65 @@ server <- function(input, output, session) {
         attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         options = tileOptions(noWrap = TRUE)
       ) |>
-      fitBounds(
-        unname(map_bbox["xmin"]), unname(map_bbox["ymin"]),
-        unname(map_bbox["xmax"]), unname(map_bbox["ymax"])
+      setView(
+        lng = 10.5,
+        lat = 51.1,
+        zoom = 6
       ) |>
       htmlwidgets::onRender(
         "
         function(el, x) {
-          window.ugLeafletMaps = window.ugLeafletMaps || {};
-          window.ugLeafletMaps[el.id] = this;
+          var map = this;
+
+          function layerIdFor(layer) {
+            var registry = map.layerManager._byLayerId || {};
+
+            if (registry.shape) {
+              var nestedKeys = Object.keys(registry.shape);
+              for (var i = 0; i < nestedKeys.length; i++) {
+                if (registry.shape[nestedKeys[i]] === layer) {
+                  return nestedKeys[i];
+                }
+              }
+            }
+
+            var keys = Object.keys(registry);
+            for (var j = 0; j < keys.length; j++) {
+              if (registry[keys[j]] === layer) {
+                var parts = keys[j].split('\\n');
+                if (parts.length === 1 || parts[0] === 'shape') {
+                  return parts[parts.length - 1];
+                }
+              }
+            }
+
+            return null;
+          }
+
+          function bindRightClick(layer) {
+            window.setTimeout(function() {
+              var id = layerIdFor(layer);
+              if (id === null || !layer || typeof layer.on !== 'function') {
+                return;
+              }
+
+              layer.on('contextmenu', function(e) {
+                if (e.originalEvent) {
+                  L.DomEvent.preventDefault(e.originalEvent);
+                }
+
+                Shiny.setInputValue(
+                  el.id + '_shape_rightclick',
+                  {id: id, nonce: Math.random()},
+                  {priority: 'event'}
+                );
+              });
+            }, 0);
+          }
+
+          map.on('layeradd', function(e) {
+            bindRightClick(e.layer);
+          });
         }
         "
       )
@@ -536,12 +574,19 @@ server <- function(input, output, session) {
         ),
         opacity = 0.9,
         title = "Bewertung"
+      ) |>
+      addControl(
+        html = paste0(
+          "<div class='map-instructions'>",
+          "<strong>Kartenbedienung</strong><br>",
+          "Mit der Maus: Details anzeigen<br>",
+          "Rechtsklick: UG als Ziel wählen",
+          "</div>"
+        ),
+        position = "topleft",
+        className = "map-instructions-wrapper"
       )
 
-    session$sendCustomMessage(
-      "bindUgRightClick",
-      list(mapId = "ug_map")
-    )
   })
 
   output$results <- renderDT({
