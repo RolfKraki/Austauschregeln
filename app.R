@@ -49,7 +49,64 @@ if (anyNA(rules$donor_id) || anyNA(rules$target_id)) {
   stop("Invalid donor_id or target_id in app data.")
 }
 
+taxon_labels <- c(
+  "ACH.AGG" = "Achillea millefolium agg.",
+  "ACH.MIL" = "Achillea millefolium s.str.",
+  "ACH.PRA" = "Achillea collina/pratensis",
+  "AGR.CAP" = "Agrostis capillaris",
+  "AGR.EUP" = "Agrimonia eupatoria",
+  "ANT.ODO" = "Anthoxanthum odoratum",
+  "ARR.ELA" = "Arrhenatherum elatius",
+  "BIS.OFF" = "Bistorta officinalis",
+  "BRO.ERE" = "Bromus erectus",
+  "CAM.R2x" = "Campanula rotundifolia 2x",
+  "CAM.R4x" = "Campanula rotundifolia 4x",
+  "CAM.ROT" = "Campanula rotundifolia s.l.",
+  "CEN.JAC" = "Centaurea jacea",
+  "COR.CAN" = "Corynephorus canescens",
+  "CYN.CRI" = "Cynosurus cristatus",
+  "EUP.C4x" = "Euphorbia cyparissias 4x",
+  "EUP.CYP" = "Euphorbia cyparissias",
+  "FES.NIG" = "Festuca nigrescens",
+  "FES.RRU" = "Festuca rubra s.str.",
+  "FES.RUB" = "Festuca rubra s.l.",
+  "FIL.ULM" = "Filipendula ulmaria",
+  "GAL.ALB" = "Galium album",
+  "HYP.RAD" = "Hypochaeris radicata",
+  "KNA.A4x" = "Knautia arvensis 4x",
+  "LAT.PRA" = "Lathyrus pratensis",
+  "LEU.AGG" = "Leucanthemum vulgare s.l.",
+  "LEU.IRC" = "Leucanthemum ircutianum",
+  "LEU.VUL" = "Leucanthemum vulgare s.str.",
+  "LOT.COR" = "Lotus corniculatus",
+  "LYC.FLO" = "Lychnis flos-cuculi",
+  "PIM.S2x" = "Pimpinella saxifraga 2x",
+  "PIM.S4x" = "Pimpinella saxifraga 4x",
+  "PIM.SAX" = "Pimpinella saxifraga",
+  "PRU.VUL" = "Prunella vulgaris",
+  "RAN.ACR" = "Ranunculus acris",
+  "SAL.PRA" = "Salvia pratensis",
+  "SIL.VUL" = "Silene vulgaris",
+  "THY.PUL" = "Thymus pulegioides",
+  "TRA.AGG" = "Tragopogon pratensis s.l.",
+  "TRA.ORI" = "Tragopogon orientalis",
+  "TRA.PRA" = "Tragopogon pratensis/minor"
+)
+
 taxa <- sort(unique(rules$taxon))
+
+missing_taxon_labels <- setdiff(taxa, names(taxon_labels))
+if (length(missing_taxon_labels) > 0L) {
+  stop(
+    "Missing display names for taxa: ",
+    paste(missing_taxon_labels, collapse = ", ")
+  )
+}
+
+taxon_choices <- setNames(
+  names(taxon_labels),
+  unname(taxon_labels)
+)
 
 # Map polygons ---------------------------------------------------------------
 
@@ -82,6 +139,15 @@ ug_shape <- ug_shape |>
 if (anyNA(ug_shape$ug_id) || !all(1:22 %in% ug_shape$ug_id)) {
   stop("The shapefile does not contain valid identifiers for UGs 01-22.")
 }
+
+ug_label_points <- ug_shape |>
+  st_transform(3035) |>
+  st_point_on_surface() |>
+  st_transform(4326)
+
+label_coordinates <- st_coordinates(ug_label_points)
+ug_label_points$label_lng <- label_coordinates[, 1]
+ug_label_points$label_lat <- label_coordinates[, 2]
 
 map_bbox <- st_bbox(ug_shape)
 
@@ -117,6 +183,19 @@ ui <- fluidPage(
         overflow: hidden; background: #eef2f3;
       }
       .leaflet-container { background: #eef2f3 !important; }
+      .info.legend {
+        font-size: 9px; line-height: 12px;
+        padding: 4px 6px; max-width: 185px;
+      }
+      .info.legend i {
+        width: 11px; height: 11px; margin-right: 4px;
+      }
+      .ug-number-label {
+        background: rgba(255,255,255,0.68);
+        border: 0; box-shadow: none;
+        color: #303030; font-weight: 700; font-size: 10px;
+        padding: 0 2px;
+      }
       .table-panel {
         border: 1px solid #d9dde1; border-radius: 7px;
         padding: 7px 9px; background: white;
@@ -127,6 +206,13 @@ ui <- fluidPage(
         padding: 4px 5px;
       }
       .map-help { color: #5f6368; font-size: 12px; margin-top: 5px; }
+      .species-image-frame {
+        height: 245px; margin-top: 8px;
+        border: 1px dashed #aeb4b9; border-radius: 7px;
+        background: #fafafa;
+        display: flex; align-items: center; justify-content: center;
+        color: #9aa0a6; font-size: 12px;
+      }
       "
     ))
   ),
@@ -143,7 +229,7 @@ ui <- fluidPage(
       3,
       selectInput(
         "taxon", "Art oder Taxon",
-        choices = taxa, selected = taxa[1], width = "100%"
+        choices = taxon_choices, selected = taxa[1], width = "100%"
       )
     ),
     column(
@@ -167,7 +253,7 @@ ui <- fluidPage(
 
   fluidRow(
     column(
-      8,
+      6,
       h4(textOutput("selection_text")),
       div(
         class = "map-panel",
@@ -180,6 +266,14 @@ ui <- fluidPage(
         class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
         tableOutput("results")
+      )
+    ),
+    column(
+      2,
+      h4("Artenbild"),
+      div(
+        class = "species-image-frame",
+        "Bildplatzhalter"
       )
     )
   )
@@ -294,7 +388,7 @@ server <- function(input, output, session) {
   output$selection_text <- renderText({
     req(input$taxon, input$target)
     paste0(
-      input$taxon,
+      unname(taxon_labels[[input$taxon]]),
       " – Zielgebiet UG ",
       sprintf("%02d", as.integer(input$target))
     )
@@ -313,9 +407,14 @@ server <- function(input, output, session) {
         boxZoom = FALSE,
         keyboard = FALSE,
         touchZoom = FALSE,
-        attributionControl = FALSE
+        attributionControl = TRUE
       )
     ) |>
+      addTiles(
+        urlTemplate = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        options = tileOptions(noWrap = TRUE)
+      ) |>
       fitBounds(
         unname(map_bbox["xmin"]), unname(map_bbox["ymin"]),
         unname(map_bbox["xmax"]), unname(map_bbox["ymax"])
@@ -336,6 +435,19 @@ server <- function(input, output, session) {
           fillOpacity = 0.95,
           bringToFront = TRUE
         )
+      ) |>
+      addLabelOnlyMarkers(
+        data = ug_label_points,
+        lng = ~label_lng,
+        lat = ~label_lat,
+        label = ~sprintf("%02d", ug_id),
+        labelOptions = labelOptions(
+          noHide = TRUE,
+          direction = "center",
+          textOnly = TRUE,
+          className = "ug-number-label"
+        ),
+        options = markerOptions(interactive = FALSE)
       ) |>
       addLegend(
         position = "bottomright",
