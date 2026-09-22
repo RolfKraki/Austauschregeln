@@ -261,11 +261,37 @@ ui <- fluidPage(
         color: #9aa0a6; font-size: 9px; margin-bottom: 5px;
         overflow: hidden;
       }
-      .species-thumbnail img {
+      .admixture-panel {
+        border: 1px solid #c8cdd1; border-radius: 7px;
+        padding: 6px; background: #f7f8f9;
+      }
+      .admixture-title {
+        margin: 0 0 5px 0; color: #454b50;
+        font-size: 12px; font-weight: 600;
+      }
+      .admixture-map {
+        width: 100%;
+        height: calc((100vh - 125px) / 3);
+        min-height: 160px; max-height: 230px;
+        background: white; border: 1px solid #d9dde1;
+        border-radius: 5px; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .admixture-map img {
         width: 100%; height: 100%; object-fit: contain;
       }
-      .species-thumbnail .shiny-plot-output {
+      .admixture-map .shiny-plot-output {
         width: 100% !important; height: 100% !important;
+      }
+      .admixture-legend {
+        margin-top: 6px; padding: 6px 7px;
+        border: 1px solid #d9dde1; border-radius: 5px;
+        background: white; color: #454b50;
+        font-size: 10px; line-height: 1.35;
+      }
+      .admixture-missing {
+        padding: 8px; color: #777; font-size: 10px;
+        text-align: center;
       }
 
       .map-panel {
@@ -371,7 +397,7 @@ ui <- fluidPage(
         ),
         div(
           class = "species-thumbnail",
-          uiOutput("cluster_thumbnail")
+          tags$span("Artenbild")
         )
       )
     ),
@@ -391,14 +417,18 @@ ui <- fluidPage(
 
   fluidRow(
     column(
-      4,
+      5,
       div(
         class = "map-panel",
         leafletOutput("ug_map", height = "100%")
       )
     ),
     column(
-      8,
+      2,
+      uiOutput("admixture_panel")
+    ),
+    column(
+      5,
       div(
         class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
@@ -487,45 +517,81 @@ server <- function(input, output, session) {
     }
   })
 
-  output$cluster_thumbnail <- renderUI({
+  output$admixture_panel <- renderUI({
     req(input$taxon)
     k <- unname(kopt_min[[input$taxon]])
 
-    if (is.na(k) || k == 1) {
-      plotOutput(
+    if (is.na(k)) {
+      return(
+        div(
+          class = "admixture-panel",
+          div(class = "admixture-title", "Genetische Struktur"),
+          div(
+            class = "admixture-map",
+            div(class = "admixture-missing", "Kein K bestimmt")
+          ),
+          div(
+            class = "admixture-legend",
+            "Für dieses Taxon wurde kein Referenzwert aus einer ",
+            "Clusterlösung abgeleitet."
+          )
+        )
+      )
+    }
+
+    if (k == 1) {
+      map_content <- plotOutput(
         "cluster_shape",
-        width = "112px",
-        height = "74px"
+        width = "100%",
+        height = "100%"
+      )
+      explanation <- tagList(
+        tags$strong("Referenzwert: K = 1. "),
+        "Der Referenzwert für die Austauschentscheidung basiert hier auf ",
+        "den Unterschieden zwischen den UGs; eine interpolierte ",
+        "Admixture-Clusterkarte ist daher nicht verfügbar."
       )
     } else {
-      file_name <- paste0(
-        input$taxon,
-        "_K",
-        k,
-        ".png"
-      )
+      file_name <- paste0(input$taxon, "_K", k, ".png")
+      local_file <- file.path("www", "admixture", file_name)
 
-      local_file <- file.path(
-        "www",
-        "admixture",
-        file_name
-      )
-
-      if (file.exists(local_file)) {
+      map_content <- if (file.exists(local_file)) {
         tags$img(
           src = file.path("admixture", file_name),
           alt = paste0(
+            "Interpolierte Clusterzugehörigkeit für ",
             taxon_labels[[input$taxon]],
-            ", K = ",
-            k
+            ", K = ", k
           )
         )
       } else {
-        tags$span(
-          paste0("K = ", k, ": Bild fehlt")
+        div(
+          class = "admixture-missing",
+          paste0("Admixture-Karte für K = ", k, " fehlt")
         )
       }
+
+      explanation <- tagList(
+        tags$strong(paste0("Referenzwert: K = ", k, ". ")),
+        "Der Referenzwert für die Austauschentscheidung wurde aus dieser ",
+        "Clusterlösung abgeleitet. Die Karte zeigt die zugehörige ",
+        "interpolierte genetische Clusterzugehörigkeit."
+      )
     }
+
+    div(
+      class = "admixture-panel",
+      div(
+        class = "admixture-title",
+        if (k == 1) {
+          "UG-Struktur (K = 1)"
+        } else {
+          paste0("Genetische Cluster (K = ", k, ")")
+        }
+      ),
+      div(class = "admixture-map", map_content),
+      div(class = "admixture-legend", explanation)
+    )
   })
 
   output$cluster_shape <- renderPlot({
