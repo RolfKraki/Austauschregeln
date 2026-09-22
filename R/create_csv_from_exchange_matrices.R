@@ -20,6 +20,10 @@ source_file <- file.path(
 )
 
 date_tag <- format(Sys.Date(), "%Y-%m-%d")
+data_version <- format(
+  Sys.time(),
+  "%Y-%m-%d %H:%M:%S %Z"
+)
 
 long_file <- file.path(
   output_dir,
@@ -305,6 +309,8 @@ if (nrow(decision_conflicts) > 0L) {
 
 app_rules <- exchange_rules_long |>
   mutate(
+    data_version = data_version,
+
     status = case_when(
       !(is_neighbor %in% TRUE) ~
         "not_neighbor",
@@ -338,6 +344,7 @@ app_rules <- exchange_rules_long |>
     )
   ) |>
   select(
+    data_version,
     taxon,
     donor_id,
     target_id,
