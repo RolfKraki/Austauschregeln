@@ -217,6 +217,8 @@ ug_label_points$label_lng <- label_coordinates[, 1]
 ug_label_points$label_lat <- label_coordinates[, 2]
 
 map_bbox <- st_bbox(ug_shape)
+map_lon_padding <- unname((map_bbox["xmax"] - map_bbox["xmin"]) * 0.05)
+map_lat_padding <- unname((map_bbox["ymax"] - map_bbox["ymin"]) * 0.05)
 
 map_colors <- c(
   other = "#F7F7F7",
@@ -249,8 +251,17 @@ ui <- fluidPage(
       .control-row .form-group { margin-bottom: 5px; }
       .control-row label { font-size: 12px; margin-bottom: 2px; }
 
+      .side-panel-stack {
+        width: 100%;
+        height: calc(100vh - 165px);
+        min-height: 320px; max-height: 680px;
+        display: flex; flex-direction: column; gap: 8px;
+      }
+      #admixture_panel {
+        flex: 2 1 0; min-height: 0;
+      }
       .species-thumbnail {
-        width: 100%; height: 115px; margin-top: 8px;
+        flex: 1 1 0; min-height: 0; width: 100%;
         border: 2px solid #68737d; border-radius: 7px;
         background: #fafafa;
         display: flex; align-items: center; justify-content: center;
@@ -261,17 +272,17 @@ ui <- fluidPage(
         width: 100%; height: 100%; object-fit: contain;
       }
       .admixture-panel {
+        height: 100%; min-height: 0;
         border: 1px solid #c8cdd1; border-radius: 7px;
         padding: 6px; background: #f7f8f9;
+        display: flex; flex-direction: column;
       }
       .admixture-title {
         margin: 0 0 5px 0; color: #454b50;
         font-size: 12px; font-weight: 600;
       }
       .admixture-map {
-        width: 100%;
-        height: calc((100vh - 165px) / 3);
-        min-height: 175px; max-height: 225px;
+        flex: 1 1 auto; min-height: 0; width: 100%;
         background: white; border: 1px solid #d9dde1;
         border-radius: 5px; overflow: hidden;
         display: flex; align-items: center; justify-content: center;
@@ -384,7 +395,7 @@ ui <- fluidPage(
     column(
       8,
       selectInput(
-        "taxon", "Art oder Taxon",
+        "taxon", "Art oder Taxon (Bitte selektieren)",
         choices = taxon_choices,
         selected = taxa[1],
         width = "100%"
@@ -409,10 +420,13 @@ ui <- fluidPage(
     ),
     column(
       2,
-      uiOutput("admixture_panel"),
       div(
-        class = "species-thumbnail",
-        tags$span("Artenbild")
+        class = "side-panel-stack",
+        uiOutput("admixture_panel"),
+        div(
+          class = "species-thumbnail",
+          tags$span("Artenbild")
+        )
       )
     ),
     column(
@@ -678,7 +692,9 @@ server <- function(input, output, session) {
         boxZoom = FALSE,
         keyboard = FALSE,
         touchZoom = FALSE,
-        attributionControl = FALSE
+        attributionControl = FALSE,
+        zoomSnap = 0.1,
+        zoomDelta = 0.1
       )
     ) |>
       addTiles(
@@ -695,10 +711,10 @@ server <- function(input, output, session) {
         attribution = "Esri, USGS, NOAA"
       ) |>
       fitBounds(
-        lng1 = unname(map_bbox["xmin"]),
-        lat1 = unname(map_bbox["ymin"]),
-        lng2 = unname(map_bbox["xmax"]),
-        lat2 = unname(map_bbox["ymax"])
+        lng1 = unname(map_bbox["xmin"]) - map_lon_padding,
+        lat1 = unname(map_bbox["ymin"]) - map_lat_padding,
+        lng2 = unname(map_bbox["xmax"]) + map_lon_padding,
+        lat2 = unname(map_bbox["ymax"]) + map_lat_padding
       ) |>
       htmlwidgets::onRender(
         "
@@ -825,7 +841,7 @@ server <- function(input, output, session) {
       addControl(
         html = paste0(
           "<div class='map-instructions'>",
-          "Rechtsklick: UG als Ziel wählen",
+          "Rechtsklick: Ziel-UG wählen",
           "</div>"
         ),
         position = "bottomleft",
