@@ -264,7 +264,7 @@ ui <- fluidPage(
       .container-fluid { padding: 7px 12px; }
       h2 { margin: 3px 0 1px 0; font-size: 23px; }
       h4 { margin: 4px 0 6px 0; font-size: 15px; }
-      .app-subtitle { color: #5f6368; margin-bottom: 6px; font-size: 12px; }
+      .app-subtitle { color: #5f6368; margin-bottom: 16px; font-size: 12px; }
       .selectize-control { z-index: 2000 !important; }
       .selectize-dropdown { z-index: 20000 !important; }
 
@@ -398,8 +398,16 @@ ui <- fluidPage(
         width: 11px; height: 11px; margin-right: 4px;
       }
 
+      .leaflet-top.leaflet-left {
+        width: 100%;
+      }
+      .map-title-wrapper {
+        width: calc(100% - 20px);
+        box-sizing: border-box;
+      }
       .map-title-box {
-        max-width: 255px;
+        width: 100%; max-width: none;
+        box-sizing: border-box;
         background: rgba(255,255,255,0.92);
         border: 1px solid #c8cdd1;
         border-radius: 5px;
