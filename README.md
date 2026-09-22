@@ -24,7 +24,8 @@ install.packages(c(
   "purrr",
   "here",
   "sf",
-  "leaflet"
+  "leaflet",
+  "DT"
 ))
 ```
 
