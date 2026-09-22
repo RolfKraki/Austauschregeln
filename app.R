@@ -282,7 +282,7 @@ ui <- fluidPage(
         display: flex; flex-direction: column; gap: 8px;
       }
       .side-picture-column {
-        padding-left: 1px;
+        padding-left: 0px;
       }
       #admixture_panel {
         flex: 2 1 0; min-height: 0;
@@ -350,7 +350,7 @@ ui <- fluidPage(
       }
 
       .map-panel {
-        width: 100%; max-width: 555px; margin: 0 auto;
+        width: 100%; max-width: 555px; margin: 0 0 0 auto;
         height: calc(100vh - 165px);
         min-height: 320px; max-height: 680px;
         border: 2px solid #68737d; border-radius: 7px;
