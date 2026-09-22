@@ -2,6 +2,7 @@ library(shiny)
 library(dplyr)
 library(sf)
 library(leaflet)
+library(DT)
 
 # Data -----------------------------------------------------------------------
 
@@ -134,7 +135,13 @@ if (!"Herkunft" %in% names(ug_shape)) {
 ug_shape <- ug_shape |>
   mutate(ug_id = as.integer(as.character(Herkunft))) |>
   st_make_valid() |>
-  st_transform(4326)
+  st_transform(4326) |>
+  st_crop(
+    xmin = 5.5,
+    ymin = 47.0,
+    xmax = 15.5,
+    ymax = 55.2
+  )
 
 if (anyNA(ug_shape$ug_id) || !all(1:22 %in% ug_shape$ug_id)) {
   stop("The shapefile does not contain valid identifiers for UGs 01-22.")
@@ -214,6 +221,52 @@ ui <- fluidPage(
         color: #9aa0a6; font-size: 12px;
       }
       "
+    )),
+    tags$script(htmltools::HTML(
+      "
+      Shiny.addCustomMessageHandler('bindUgRightClick', function(message) {
+        window.setTimeout(function() {
+          if (!window.ugLeafletMaps) return;
+
+          var map = window.ugLeafletMaps[message.mapId];
+          if (!map || !map.layerManager) return;
+
+          var registry = map.layerManager._byLayerId || {};
+          var layers = registry.shape || registry;
+
+          Object.keys(layers).forEach(function(key) {
+            var layer = layers[key];
+            var id = key;
+
+            if (!registry.shape) {
+              var parts = key.split('\\n');
+              if (parts.length > 1 && parts[0] !== 'shape') return;
+              id = parts[parts.length - 1];
+            }
+
+            if (!layer || typeof layer.on !== 'function') return;
+
+            if (layer._ugContextHandler) {
+              layer.off('contextmenu', layer._ugContextHandler);
+            }
+
+            layer._ugContextHandler = function(e) {
+              if (e.originalEvent) {
+                L.DomEvent.preventDefault(e.originalEvent);
+              }
+
+              Shiny.setInputValue(
+                message.mapId + '_shape_rightclick',
+                {id: id, nonce: Math.random()},
+                {priority: 'event'}
+              );
+            };
+
+            layer.on('contextmenu', layer._ugContextHandler);
+          });
+        }, 75);
+      });
+      "
     ))
   ),
 
@@ -253,7 +306,7 @@ ui <- fluidPage(
 
   fluidRow(
     column(
-      6,
+      5,
       h4(textOutput("selection_text")),
       div(
         class = "map-panel",
@@ -265,11 +318,11 @@ ui <- fluidPage(
       div(
         class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
-        tableOutput("results")
+        DTOutput("results")
       )
     ),
     column(
-      2,
+      3,
       h4("Artenbild"),
       div(
         class = "species-image-frame",
@@ -395,10 +448,7 @@ server <- function(input, output, session) {
   })
 
   output$ug_map <- renderLeaflet({
-    polygons <- map_data()
-
     leaflet(
-      polygons,
       options = leafletOptions(
         zoomControl = FALSE,
         dragging = FALSE,
@@ -419,10 +469,31 @@ server <- function(input, output, session) {
         unname(map_bbox["xmin"]), unname(map_bbox["ymin"]),
         unname(map_bbox["xmax"]), unname(map_bbox["ymax"])
       ) |>
+      htmlwidgets::onRender(
+        "
+        function(el, x) {
+          window.ugLeafletMaps = window.ugLeafletMaps || {};
+          window.ugLeafletMaps[el.id] = this;
+        }
+        "
+      )
+  })
+
+  observe({
+    polygons <- map_data()
+
+    leafletProxy(
+      "ug_map",
+      data = polygons,
+      session = session
+    ) |>
+      clearShapes() |>
+      clearMarkers() |>
+      clearControls() |>
       addPolygons(
         layerId = ~as.character(ug_id),
         fillColor = ~fill_color,
-        fillOpacity = 0.82,
+        fillOpacity = 1,
         color = ~border_color,
         weight = ~border_weight,
         opacity = 1,
@@ -432,7 +503,7 @@ server <- function(input, output, session) {
         highlightOptions = highlightOptions(
           weight = 3,
           color = "#222222",
-          fillOpacity = 0.95,
+          fillOpacity = 1,
           bringToFront = TRUE
         )
       ) |>
@@ -465,47 +536,15 @@ server <- function(input, output, session) {
         ),
         opacity = 0.9,
         title = "Bewertung"
-      ) |>
-      htmlwidgets::onRender(
-        "
-        function(el, x) {
-          var map = this;
-          var registry = map.layerManager._byLayerId || {};
-          var layers = registry.shape || registry;
-
-          Object.keys(layers).forEach(function(key) {
-            var layer = layers[key];
-            var id = key;
-
-            if (!registry.shape) {
-              var parts = key.split('\\n');
-              if (parts.length > 1 && parts[0] !== 'shape') return;
-              id = parts[parts.length - 1];
-            }
-
-            if (!layer || typeof layer.on !== 'function') return;
-
-            layer.on('contextmenu', function(e) {
-              if (e.originalEvent) {
-                L.DomEvent.preventDefault(e.originalEvent);
-              }
-
-              Shiny.setInputValue(
-                el.id + '_shape_rightclick',
-                {
-                  id: id,
-                  nonce: Math.random()
-                },
-                {priority: 'event'}
-              );
-            });
-          });
-        }
-        "
       )
+
+    session$sendCustomMessage(
+      "bindUgRightClick",
+      list(mapId = "ug_map")
+    )
   })
 
-  output$results <- renderTable({
+  output$results <- renderDT({
     result <- neighboring_results() |>
       arrange(
         factor(
@@ -523,13 +562,15 @@ server <- function(input, output, session) {
       transmute(
         Herkunftsgebiet = sprintf("UG %02d", donor_id),
         Bewertung = display_decision,
-        N_Herkunft = n_donor
+        N_donor = n_donor,
+        N_target = n_target
       )
 
     names(result) <- c(
       "Herkunftsgebiet",
       "Bewertung",
-      "N Herkunft"
+      "N donor",
+      "N target"
     )
 
     validate(
@@ -539,14 +580,23 @@ server <- function(input, output, session) {
       )
     )
 
-    result
-  },
-  striped = TRUE,
-  bordered = FALSE,
-  hover = TRUE,
-  spacing = "xs",
-  width = "auto"
-  )
+    datatable(
+      result,
+      rownames = FALSE,
+      extensions = "Buttons",
+      options = list(
+        dom = "Bt",
+        buttons = c("copy", "csv", "excel"),
+        paging = FALSE,
+        searching = FALSE,
+        info = FALSE,
+        ordering = FALSE,
+        autoWidth = TRUE
+      ),
+      class = "compact stripe hover"
+    )
+  })
+
 }
 
 shinyApp(ui, server)
