@@ -143,6 +143,26 @@ taxon_choices <- setNames(
   unname(taxon_labels)
 )
 
+species_picture_files <- c(
+  "ANT.ODO" = "ant.odo_02_800px.jpg",
+  "ARR.ELA" = "Arr.ela_800.jpg",
+  "CAM.ROT" = "cam.rot_square_800px_v2.JPG",
+  "CAM.R2x" = "cam.rot_square_800px_v2.JPG",
+  "CAM.R4x" = "cam.rot_square_800px_v2.JPG",
+  "CYN.CRI" = "cyn_cri_02_black_800.JPG",
+  "FES.RUB" = "fes.rub_02_black_800px.JPG",
+  "FES.RRU" = "fes.rub_02_black_800px.JPG",
+  "FES.NIG" = "fes.rub_02_black_800px.JPG",
+  "GAL.ALB" = "gal.alb_black_800px.JPG",
+  "HYP.RAD" = "hyp.rad_03_black_800px.jpg",
+  "KNA.A4x" = "kna.arv_01_black_800.JPG",
+  "LOT.COR" = "lot.cor_800px.JPG",
+  "RAN.ACR" = "ran.acr_04_black_800px.JPG",
+  "TRA.AGG" = "tra.agg_01_black_800px.jpg",
+  "TRA.PRA" = "tra.agg_01_black_800px.jpg",
+  "TRA.ORI" = "tra.agg_01_black_800px.jpg"
+)
+
 kopt_min <- c(
   "ACH.AGG" = 2, "ACH.MIL" = 1, "ACH.PRA" = 2,
   "AGR.EUP" = 4, "AGR.CAP" = 2, "ANT.ODO" = 3,
@@ -262,14 +282,32 @@ ui <- fluidPage(
       }
       .species-thumbnail {
         flex: 1 1 0; min-height: 0; width: 100%;
+        position: relative;
         border: 2px solid #68737d; border-radius: 7px;
         background: #fafafa;
         display: flex; align-items: center; justify-content: center;
         color: #8a9298; font-size: 10px;
         overflow: hidden;
       }
+      #species_picture {
+        position: relative; width: 100%; height: 100%;
+      }
       .species-thumbnail img {
-        width: 100%; height: 100%; object-fit: contain;
+        width: 100%; height: 100%; object-fit: cover;
+        display: block;
+      }
+      .species-name-overlay {
+        position: absolute; right: 5px; bottom: 5px;
+        max-width: calc(100% - 10px);
+        padding: 2px 5px; border-radius: 3px;
+        background: rgba(255,255,255,0.82);
+        color: #30363b; font-size: 9px; line-height: 1.2;
+        text-align: right;
+      }
+      .species-picture-missing {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        color: #8a9298; font-size: 10px;
       }
       .admixture-panel {
         height: 100%; min-height: 0;
@@ -425,7 +463,7 @@ ui <- fluidPage(
         uiOutput("admixture_panel"),
         div(
           class = "species-thumbnail",
-          tags$span("Artenbild")
+          uiOutput("species_picture")
         )
       )
     ),
@@ -502,6 +540,34 @@ server <- function(input, output, session) {
         session,
         "target",
         selected = clicked_ug
+      )
+    }
+  })
+
+  output$species_picture <- renderUI({
+    req(input$taxon)
+
+    file_name <- unname(species_picture_files[input$taxon])
+
+    if (
+      length(file_name) == 1L &&
+      !is.na(file_name) &&
+      file.exists(file.path("www", "species_pics", file_name))
+    ) {
+      tagList(
+        tags$img(
+          src = paste0("species_pics/", file_name),
+          alt = taxon_labels[[input$taxon]]
+        ),
+        div(
+          class = "species-name-overlay",
+          tags$em(taxon_labels[[input$taxon]])
+        )
+      )
+    } else {
+      div(
+        class = "species-picture-missing",
+        "Kein Artenbild verfügbar"
       )
     }
   })
