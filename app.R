@@ -493,7 +493,7 @@ ui <- fluidPage(
           selectInput(
             "taxon", "Art oder Taxon (Bitte selektieren)",
             choices = taxon_choices,
-            selected = taxa[1],
+            selected = sample(taxa, size = 1L),
             width = "100%"
           )
         ),
