@@ -1,5 +1,3 @@
-
-
 #############################
 # Safe input for Shiny app
 #############################
@@ -7,28 +5,43 @@
 library(dplyr)
 library(purrr)
 library(here)
+
 # ------------------------------------------------------------------
-# 1. File paths
+# 1. Project-relative file paths
 # ------------------------------------------------------------------
-source_file <- file.path(paste0(here(),"/Data/meanPairwisePCA4neighbors_v4d_tables.RData"))
-date_tag <- format(Sys.Date(), "%Y-%m-%d")
-long_file <- file.path(paste0(here(),"/exchange_rules_long_", date_tag, ".csv"))
-app_file <- file.path(paste0(here(),"/exchange_rules_app_", date_tag, ".csv"))
-app_dir <- file.path(here())
+
 project_dir <- here::here()
+input_dir <- file.path(project_dir, "data", "input")
+output_dir <- file.path(project_dir, "data", "output")
+
+source_file <- file.path(
+  input_dir,
+  "meanPairwisePCA4neighbors_v4d_tables.RData"
+)
+
+date_tag <- format(Sys.Date(), "%Y-%m-%d")
 
 long_file <- file.path(
-  project_dir,
+  output_dir,
   paste0("exchange_rules_long_", date_tag, ".csv")
 )
 
-# The Shiny app always reads this stable repository-relative filename.
+# Stable filename read by app.R and committed with the app.
 app_file <- file.path(
   project_dir,
   "data",
   "exchange_rules_app.csv"
 )
->>>>>>> b0795396124ec622f18f335889093195d1286f05
+
+dir.create(input_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+if (!file.exists(source_file)) {
+  stop(
+    "Input file not found. Copy the RData file to:\n",
+    source_file
+  )
+}
 
 # ------------------------------------------------------------------
 # 2. Load the RData file safely
@@ -367,12 +380,6 @@ print(
 # ------------------------------------------------------------------
 # 8. Write both CSV files
 # ------------------------------------------------------------------
-
-dir.create(
-  file.path(project_dir, "data"),
-  recursive = TRUE,
-  showWarnings = FALSE
-)
 
 # Base R is used because readr/vroom generated a version warning
 write.csv(
