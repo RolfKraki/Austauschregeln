@@ -781,7 +781,7 @@ server <- function(input, output, session) {
       }
 
       explanation <- tagList(
-        "Die Karte zeigt die interpolierte Zugehörigkeit zu den genetischen ",
+        "Die Karte zeigt die untersuchten Proben und die interpolierte Zugehörigkeit zu den genetischen ",
         "Clustern. Die dargestellte Clusterlösung wurde als plausibelste ",
         "übergeordnete Ebene der genetischen Strukturierung ausgewählt; ",
         "innerhalb der Cluster kann eine feinere Struktur bestehen. ",
