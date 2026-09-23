@@ -101,7 +101,7 @@ taxon_labels <- c(
   "COR.CAN" = "Corynephorus canescens",
   "CYN.CRI" = "Cynosurus cristatus",
   "EUP.C4x" = "Euphorbia cyparissias 4x",
-  "EUP.CYP" = "Euphorbia cyparissias",
+  "EUP.CYP" = "Euphorbia cyparissias s.l.",
   "FES.NIG" = "Festuca nigrescens",
   "FES.RRU" = "Festuca rubra s.str.",
   "FES.RUB" = "Festuca rubra s.l.",
@@ -117,7 +117,7 @@ taxon_labels <- c(
   "LYC.FLO" = "Lychnis flos-cuculi",
   "PIM.S2x" = "Pimpinella saxifraga 2x",
   "PIM.S4x" = "Pimpinella saxifraga 4x",
-  "PIM.SAX" = "Pimpinella saxifraga",
+  "PIM.SAX" = "Pimpinella saxifraga s.l.",
   "PRU.VUL" = "Prunella vulgaris",
   "RAN.ACR" = "Ranunculus acris",
   "SAL.PRA" = "Salvia pratensis",
@@ -491,7 +491,7 @@ ui <- fluidPage(
         column(
           8,
           selectInput(
-            "taxon", "Art oder Taxon (Bitte selektieren)",
+            "taxon", "Art oder Taxon",
             choices = taxon_choices,
             selected = sample(taxa, size = 1L),
             width = "100%"
