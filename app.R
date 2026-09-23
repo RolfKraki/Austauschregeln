@@ -63,6 +63,7 @@ data_version_file <- gsub(
 )
 
 logo_candidates <- c(
+  "www/logos/UFZ_Logo_RGB_DE.png",
   "www/logo.png", "www/logo.svg", "www/logo.jpg", "www/logo.jpeg",
   "www/logo/logo.png", "www/logo/logo.svg",
   "www/logo/logo.jpg", "www/logo/logo.jpeg"
