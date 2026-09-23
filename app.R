@@ -461,6 +461,43 @@ ui <- fluidPage(
         color: #ffffff;
         text-shadow: 0 1px 2px rgba(0,0,0,0.8);
       }
+      
+        /* Larger explanatory text, especially for Firefox */
+      .methods-box {
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      
+      .methods-box-title {
+        font-size: 15px;
+      }
+      
+      .admixture-title {
+        font-size: 14px;
+      }
+      
+      .admixture-legend {
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      
+      .map-title-box {
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      
+      .map-instructions {
+        font-size: 13px;
+      }
+      
+      .info.legend {
+        font-size: 12px;
+        line-height: 16px;
+      }
+      
+      .species-name-overlay {
+        font-size: 11px;
+      }
       "
     ))
   ),
