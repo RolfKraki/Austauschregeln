@@ -44,7 +44,7 @@ if ("data_version" %in% names(rules)) {
   } else {
     format(
       file.info(app_data_file)$mtime,
-      "%Y-%m-%d %H:%M:%S"
+      "%Y-%m-%d"
     )
   }
 } else {
@@ -514,7 +514,7 @@ ui <- fluidPage(
     ))
   ),
 
-  h2("Ersatzherkünfte für Regiosaatgut"),
+  h2("RegioDiv: Ersatzherkünfte für Regiosaatgut"),
   div(
     class = "app-subtitle",
     textOutput("app_subtitle", inline = TRUE)
@@ -590,7 +590,7 @@ ui <- fluidPage(
           "jeweiligen Art abgeleitet. Wird keine plausible räumlich ",
           "strukturierte Differenzierung festgestellt (K = 1), dienen die ",
           "mittleren Unterschiede zwischen allen UGs als Referenzwert. ",
-          "Blasse Farben kennzeichnen vorläufige Bewertungen, wenn in ",
+          "Blasse Farben kennzeichnen unsichere Bewertungen, wenn in ",
           "mindestens einem der verglichenen UGs weniger als fünf ",
           "Individuen untersucht wurden."
         ),
@@ -814,9 +814,9 @@ server <- function(input, output, session) {
       mutate(
         display_decision = case_when(
           too_small %in% TRUE & allowed_obs %in% TRUE ~
-            "Vorläufig zulässig (N < 5)",
+            "Eher zulässig (N < 5)",
           too_small %in% TRUE & allowed_obs %in% FALSE ~
-            "Vorläufig nicht zulässig (N < 5)",
+            "Eher nicht zulässig (N < 5)",
           state_obs == "allowed" ~ "Zulässig",
           state_obs == "not_allowed" ~ "Nicht zulässig",
           TRUE ~ "Nicht bewertet"
@@ -1045,8 +1045,8 @@ server <- function(input, output, session) {
           "Benachbart, nicht bewertet",
           "Zulässig",
           "Nicht zulässig",
-          "Vorläufig zulässig (N < 5)",
-          "Vorläufig nicht zulässig (N < 5)",
+          "Eher zulässig (N < 5)",
+          "Eher\u00a0nicht\u00a0zulässig\u00a0(N\u00a0<\u00a05)",
           "Zielgebiet"
         ),
         opacity = 0.9,
