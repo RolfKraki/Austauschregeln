@@ -431,14 +431,19 @@ ui <- fluidPage(
         padding: 5px 7px;
       }
 
-      .cite-box {
-        position: fixed; right: 12px; bottom: 12px;
-        width: 390px; padding: 7px 9px; z-index: 1200;
-        border: 1px solid #d9dde1; border-radius: 7px;
+      .methods-box {
+        position: static; width: 100%; margin-top: 8px;
+        padding: 9px 11px; box-sizing: border-box;
+        border: 2px solid #68737d; border-radius: 7px;
         background: #f7f8f9; color: #454b50;
-        font-size: 10px; line-height: 1.35;
+        font-size: 10px; line-height: 1.4;
       }
-      .cite-box ul { margin: 4px 0 0 16px; padding: 0; }
+      .methods-box-title {
+        margin-bottom: 5px; color: #30363b;
+        font-size: 11px; font-weight: 600;
+      }
+      .methods-box p { margin: 0 0 6px 0; }
+      .methods-box p:last-child { margin-bottom: 0; }
 
       .ug-number-label {
         background: rgba(255,255,255,0.38);
@@ -512,18 +517,35 @@ ui <- fluidPage(
         DTOutput("results")
       ),
       div(
-        class = "cite-box",
-        tags$strong("Bei Verwendung bitte zitieren:"),
-        tags$ul(
-          tags$li(
-            "NuL-Publikation zu den genetisch begründeten ",
-            "Austauschregeln (bibliographische Angaben nach ",
-            "Erscheinen ergänzen)."
-          ),
-          tags$li(
-            "BfN-Bericht zum RegioDiv-Projekt ",
-            "(vollständige bibliographische Angaben ergänzen)."
-          )
+        class = "methods-box",
+        div(
+          class = "methods-box-title",
+          "Methodik und Zitation"
+        ),
+        tags$p(
+          "Die Bewertung von Nachbar-Ursprungsgebieten (UG) als mögliche ",
+          "Ersatzherkünfte für ein Ziel-UG basiert auf genetischen Distanzen ",
+          "zwischen Individuen, die anhand von ddRAD-SNP-Daten ermittelt ",
+          "wurden (Durka et al. 2025). Für das Ziel-Ursprungsgebiet (UG) ",
+          "wird die mittlere genetische Distanz zu einer potenziellen ",
+          "Ersatzherkunft mit der mittleren Distanz innerhalb des Ziel-UG ",
+          "verglichen. Die Ersatzherkunft wird als genetisch unbedenklich ",
+          "eingestuft, wenn die aus dem Vergleich resultierende Differenz ",
+          "einen artspezifischen Referenzwert nicht überschreitet. Dieser ",
+          "Referenzwert wird aus der räumlich-genetischen Struktur der ",
+          "jeweiligen Art abgeleitet. Wird keine plausible räumlich ",
+          "strukturierte Differenzierung festgestellt (K = 1), dienen die ",
+          "mittleren Unterschiede zwischen allen UGs als Referenzwert. ",
+          "Blasse Farben kennzeichnen vorläufige Bewertungen, wenn in ",
+          "mindestens einem der verglichenen UGs weniger als fünf ",
+          "Individuen untersucht wurden."
+        ),
+        tags$p(
+          tags$strong("Bei Verwendung bitte zitieren: "),
+          "Durka et al. (2025), die NuL-Publikation zu den genetisch ",
+          "begründeten Austauschregeln sowie den BfN-Bericht zum ",
+          "RegioDiv-Projekt (vollständige bibliografische Angaben werden ",
+          "ergänzt)."
         )
       )
     )
