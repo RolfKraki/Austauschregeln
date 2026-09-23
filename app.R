@@ -54,11 +54,20 @@ if ("data_version" %in% names(rules)) {
   )
 }
 
+data_version <- substr(data_version, 1L, 10L)
+
 data_version_file <- gsub(
   "[^0-9-]",
   "",
-  substr(data_version, 1, 10)
+  data_version
 )
+
+logo_candidates <- c(
+  "www/logo.png", "www/logo.svg", "www/logo.jpg", "www/logo.jpeg",
+  "www/logo/logo.png", "www/logo/logo.svg",
+  "www/logo/logo.jpg", "www/logo/logo.jpeg"
+)
+logo_file <- logo_candidates[file.exists(logo_candidates)][1]
 
 as_app_logical <- function(x) {
   case_when(
@@ -264,6 +273,8 @@ ui <- fluidPage(
       .container-fluid { padding: 7px 12px; }
       h2 { margin: 3px 0 1px 0; font-size: 26px; }
       h4 { margin: 4px 0 6px 0; font-size: 17px; }
+      .app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+      .app-header-logo { max-width: 220px; max-height: 64px; width: auto; height: auto; object-fit: contain; }
       .app-subtitle { color: #5f6368; margin-bottom: 16px; font-size: 14px; }
       .selectize-control { z-index: 2000 !important; }
       .selectize-dropdown { z-index: 20000 !important; }
@@ -514,7 +525,17 @@ ui <- fluidPage(
     ))
   ),
 
-  h2("RegioDiv: Ersatzherkünfte für Regiosaatgut"),
+  div(
+    class = "app-header",
+    h2("RegioDiv: Ersatzherkünfte für Regiosaatgut"),
+    if (!is.na(logo_file)) {
+      tags$img(
+        src = sub("^www/", "", logo_file),
+        alt = "Logo",
+        class = "app-header-logo"
+      )
+    }
+  ),
   div(
     class = "app-subtitle",
     textOutput("app_subtitle", inline = TRUE)
@@ -1091,6 +1112,8 @@ server <- function(input, output, session) {
         donor_id
       ) |>
       transmute(
+        Art = unname(taxon_labels[[input$taxon]]),
+        Zielgebiet = sprintf("UG %02d", as.integer(input$target)),
         Herkunftsgebiet = sprintf("UG %02d", donor_id),
         Bewertung = display_decision,
         N_donor = n_donor,
@@ -1099,6 +1122,8 @@ server <- function(input, output, session) {
       )
 
     names(result) <- c(
+      "Art/Taxon",
+      "Ziel-UG",
       "Herkunftsgebiet",
       "Bewertung",
       "N donor",
@@ -1132,26 +1157,28 @@ server <- function(input, output, session) {
           list(
             extend = "copy",
             text = "Kopieren",
-            exportOptions = list(columns = 0:4)
+            exportOptions = list(columns = 0:6)
           ),
           list(
             extend = "csv",
             text = "CSV",
             filename = export_filename,
-            exportOptions = list(columns = 0:4)
+            bom = TRUE,
+            charset = "utf-8",
+            exportOptions = list(columns = 0:6)
           ),
           list(
             extend = "excel",
             text = "Excel",
             filename = export_filename,
-            exportOptions = list(columns = 0:4)
+            exportOptions = list(columns = 0:6)
           )
         ),
         columnDefs = list(
-          list(targets = 0, width = "105px"),
-          list(targets = 1, width = "235px"),
-          list(targets = c(2, 3), width = "75px"),
-          list(targets = 4, visible = FALSE)
+          list(targets = c(0, 1, 6), visible = FALSE),
+          list(targets = 2, width = "105px"),
+          list(targets = 3, width = "235px"),
+          list(targets = c(4, 5), width = "75px")
         ),
         scrollX = TRUE,
         paging = FALSE,
