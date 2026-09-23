@@ -340,8 +340,12 @@ ui <- fluidPage(
         display: flex; flex-direction: column;
       }
       .admixture-title {
-        margin: 0 0 5px 0; color: #454b50;
+        margin: 0; color: #454b50;
         font-size: 14px; font-weight: 600;
+      }
+      .admixture-subtitle {
+        margin: 0 0 5px 0; color: #5f6368;
+        font-size: 11px; line-height: 1.3;
       }
       .admixture-map {
         flex: 1 1 auto; min-height: 0; width: 100%;
@@ -723,12 +727,20 @@ server <- function(input, output, session) {
   output$admixture_panel <- renderUI({
     req(input$taxon)
     k <- unname(kopt_min[[input$taxon]])
+    subtitle <- if (is.na(k)) {
+      "Keine Clusterlösung verfügbar"
+    } else if (k == 1) {
+      "Keine distinkte räumlich-genetische Struktur"
+    } else {
+      "Interpolierte genetische Clusterzugehörigkeit"
+    }
 
     if (is.na(k)) {
       return(
         div(
           class = "admixture-panel",
           div(class = "admixture-title", "Genetische Struktur"),
+          div(class = "admixture-subtitle", subtitle),
           div(
             class = "admixture-map",
             div(class = "admixture-missing", "Kein K bestimmt")
@@ -792,6 +804,7 @@ server <- function(input, output, session) {
           paste0("Genetische Cluster (K = ", k, ")")
         }
       ),
+      div(class = "admixture-subtitle", subtitle),
       div(class = "admixture-map", map_content),
       div(class = "admixture-legend", explanation)
     )
