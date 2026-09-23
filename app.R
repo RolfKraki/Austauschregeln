@@ -1091,6 +1091,8 @@ server <- function(input, output, session) {
         donor_id
       ) |>
       transmute(
+        Art = unname(taxon_labels[[input$taxon]]),
+        Zielgebiet = sprintf("UG %02d", as.integer(input$target)),
         Herkunftsgebiet = sprintf("UG %02d", donor_id),
         Bewertung = display_decision,
         N_donor = n_donor,
@@ -1099,6 +1101,8 @@ server <- function(input, output, session) {
       )
 
     names(result) <- c(
+      "Art/Taxon",
+      "Ziel-UG",
       "Herkunftsgebiet",
       "Bewertung",
       "N donor",
@@ -1132,26 +1136,28 @@ server <- function(input, output, session) {
           list(
             extend = "copy",
             text = "Kopieren",
-            exportOptions = list(columns = 0:4)
+            exportOptions = list(columns = 0:6)
           ),
           list(
             extend = "csv",
             text = "CSV",
             filename = export_filename,
-            exportOptions = list(columns = 0:4)
+            bom = TRUE,
+            charset = "utf-8",
+            exportOptions = list(columns = 0:6)
           ),
           list(
             extend = "excel",
             text = "Excel",
             filename = export_filename,
-            exportOptions = list(columns = 0:4)
+            exportOptions = list(columns = 0:6)
           )
         ),
         columnDefs = list(
-          list(targets = 0, width = "105px"),
-          list(targets = 1, width = "235px"),
-          list(targets = c(2, 3), width = "75px"),
-          list(targets = 4, visible = FALSE)
+          list(targets = c(0, 1, 6), visible = FALSE),
+          list(targets = 2, width = "105px"),
+          list(targets = 3, width = "235px"),
+          list(targets = c(4, 5), width = "75px")
         ),
         scrollX = TRUE,
         paging = FALSE,
