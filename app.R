@@ -498,6 +498,18 @@ ui <- fluidPage(
       .species-name-overlay {
         font-size: 11px;
       }
+       .citation-list ul {
+        margin: 4px 0 0 18px;
+        padding: 0;
+      }
+      
+      .citation-list li {
+        margin-bottom: 3px;
+      }
+      
+      .citation-list li:last-child {
+        margin-bottom: 0;
+      }
       "
     ))
   ),
@@ -582,12 +594,25 @@ ui <- fluidPage(
           "mindestens einem der verglichenen UGs weniger als fünf ",
           "Individuen untersucht wurden."
         ),
-        tags$p(
-          tags$strong("Bei Verwendung bitte zitieren: "),
-          "Durka et al. (2025), die NuL-Publikation zu den genetisch ",
-          "begründeten Austauschregeln sowie den BfN-Bericht zum ",
-          "RegioDiv-Projekt (vollständige bibliografische Angaben werden ",
-          "ergänzt)."
+        div(
+          class = "citation-list",
+          tags$strong("Referenzen:"),
+          tags$ul(
+            tags$li(
+              "Michalski SG, Durka W, Höfner J. Ersatzherkünfte für Regiosaatgut in Deutschland",
+              ", eingereicht bei Natur und Landschaft"
+            ),
+            tags$li(
+              "Durka W, Michalski SG, Höfner J, et al. 2025. 'Assessment of genetic diversity",
+              "among seed transfer zones for multiple grassland plant species across Germany',",
+              " Basic and Applied Ecology, 84: 50-60."
+            ),
+            tags$li(
+              "Durka W, Michalski SG, Höfner J, Konsortium RegioDiv. 2024.",
+              " 'RegioDiv — Genetische Vielfalt krautiger Pflanzenarten in Deutschland ,",
+              "und Empfehlungen für die Regiosaatgut-Praxis', BfN-Schriften, 687: 315."
+            )
+          )
         )
       )
     )
