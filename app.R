@@ -149,6 +149,9 @@ taxon_choices <- setNames(
 )
 
 species_picture_files <- c(
+  "ACH.AGG" = "ach.agg.jpg",
+  "ACH.MIL" = "ach.agg.jpg",
+  "ACH.PRA" = "ach.col.jpg",
   "ANT.ODO" = "ant.odo_02_800px.jpg",
   "ARR.ELA" = "Arr.ela_800.jpg",
   "CAM.ROT" = "cam.rot_square_800px_v2.JPG",
@@ -165,8 +168,12 @@ species_picture_files <- c(
   "LEU.IRC" = "leu.agg_03_black_800px.JPG",
   "LEU.VUL" = "leu.agg_03_black_800px.JPG",
   "LOT.COR" = "lot.cor_800px.JPG",
+  "PIM.SAX" = "pim.sax.jpg",
+  "PIM.S2x" = "pim.sax.jpg",
+  "PIM.S4x" = "pim.sax.jpg",
   "RAN.ACR" = "ran.acr_04_black_800px.JPG",
   "SAL.PRA" = "sal.pra_04_black_800px.JPG",
+  "SIL.VUL" = "sil.vul.jpg",
   "TRA.AGG" = "tra.agg_01_black_800px.jpg",
   "TRA.PRA" = "tra.agg_01_black_800px.jpg",
   "TRA.ORI" = "tra.agg_01_black_800px.jpg"
