@@ -269,6 +269,7 @@ map_colors <- c(
 # UI -------------------------------------------------------------------------
 
 ui <- fluidPage(
+  title = "RegioDiv: Ersatzherkünfte für Regiosaatgut",
   tags$head(
     tags$style(htmltools::HTML(
       "
@@ -845,9 +846,9 @@ server <- function(input, output, session) {
       mutate(
         display_decision = case_when(
           too_small %in% TRUE & allowed_obs %in% TRUE ~
-            "Eher zulässig (N < 5)",
+            "Eher zulässig (geringe Stichprobenzahl, N < 5)",
           too_small %in% TRUE & allowed_obs %in% FALSE ~
-            "Eher nicht zulässig (N < 5)",
+            "Eher unzulässig (geringe Stichprobenzahl, N < 5)",
           state_obs == "allowed" ~ "Zulässig",
           state_obs == "not_allowed" ~ "Nicht zulässig",
           TRUE ~ "Nicht bewertet"
