@@ -43,6 +43,10 @@ source("scripts/create_csv_from_exchange_matrices.R")
 ```
 
 This writes the stable Shiny input to `data/exchange_rules_app.csv`.
+The export records the input `.RData` file's modification date and the
+`source_version` specified near the top of the script. Increase that version
+when the analysis results change, then commit the regenerated CSV so the app
+shows the new `Datenstand` and version.
 
 ## Run the app
 
