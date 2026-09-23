@@ -1,0 +1,16 @@
+# Build the Shiny application with Shinylive and deploy it to GitHub Pages.
+# Based on Posit's official r-shinylive deployment workflow.
+name: Deploy Shinylive app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  shinylive:
+    uses: posit-dev/r-shinylive/.github/workflows/deploy-app.yaml@actions-v1
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

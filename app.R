@@ -260,20 +260,25 @@ ui <- fluidPage(
   tags$head(
     tags$style(htmltools::HTML(
       "
-      body { overflow-y: auto; }
+      body { overflow-y: auto; font-size: 15px; }
       .container-fluid { padding: 7px 12px; }
-      h2 { margin: 3px 0 1px 0; font-size: 23px; }
-      h4 { margin: 4px 0 6px 0; font-size: 15px; }
-      .app-subtitle { color: #5f6368; margin-bottom: 16px; font-size: 12px; }
+      h2 { margin: 3px 0 1px 0; font-size: 26px; }
+      h4 { margin: 4px 0 6px 0; font-size: 17px; }
+      .app-subtitle { color: #5f6368; margin-bottom: 16px; font-size: 14px; }
       .selectize-control { z-index: 2000 !important; }
       .selectize-dropdown { z-index: 20000 !important; }
+      .selectize-input,
+      .selectize-dropdown,
+      .form-control {
+        font-size: 14px !important;
+      }
 
       .control-row {
         background: #f5f6f7; border-radius: 7px;
         padding: 5px 9px 0 9px; margin-bottom: 6px;
       }
       .control-row .form-group { margin-bottom: 5px; }
-      .control-row label { font-size: 12px; margin-bottom: 2px; }
+      .control-row label { font-size: 14px; margin-bottom: 2px; }
 
       .side-panel-stack {
         width: 100%;
@@ -293,7 +298,7 @@ ui <- fluidPage(
         border: 2px solid #68737d; border-radius: 7px;
         background: #fafafa;
         display: flex; align-items: center; justify-content: center;
-        color: #8a9298; font-size: 10px;
+        color: #8a9298; font-size: 11px;
         overflow: hidden;
       }
       #species_picture {
@@ -308,13 +313,13 @@ ui <- fluidPage(
         max-width: calc(100% - 10px);
         padding: 2px 5px; border-radius: 3px;
         background: rgba(255,255,255,0.82);
-        color: #30363b; font-size: 9px; line-height: 1.2;
+        color: #30363b; font-size: 10px; line-height: 1.2;
         text-align: right;
       }
       .species-picture-missing {
         width: 100%; height: 100%;
         display: flex; align-items: center; justify-content: center;
-        color: #8a9298; font-size: 10px;
+        color: #8a9298; font-size: 11px;
       }
       .admixture-panel {
         height: 100%; min-height: 0;
@@ -324,7 +329,7 @@ ui <- fluidPage(
       }
       .admixture-title {
         margin: 0 0 5px 0; color: #454b50;
-        font-size: 12px; font-weight: 600;
+        font-size: 14px; font-weight: 600;
       }
       .admixture-map {
         flex: 1 1 auto; min-height: 0; width: 100%;
@@ -342,10 +347,10 @@ ui <- fluidPage(
         margin-top: 6px; padding: 6px 7px;
         border: 1px solid #d9dde1; border-radius: 5px;
         background: white; color: #454b50;
-        font-size: 10px; line-height: 1.35;
+        font-size: 11px; line-height: 1.4;
       }
       .admixture-missing {
-        padding: 8px; color: #777; font-size: 10px;
+        padding: 8px; color: #777; font-size: 11px;
         text-align: center;
       }
 
@@ -367,7 +372,7 @@ ui <- fluidPage(
       }
       .table-panel table {
         width: 100% !important;
-        font-size: 12px; margin-bottom: 0;
+        font-size: 14px; margin-bottom: 0;
       }
       .table-panel table th,
       .table-panel table td {
@@ -384,14 +389,14 @@ ui <- fluidPage(
 
       .dt-buttons .dt-button,
       .dt-buttons .btn {
-        font-size: 10px !important;
+        font-size: 11px !important;
         line-height: 1.2 !important;
         padding: 2px 6px !important;
         margin: 0 3px 5px 0 !important;
       }
 
       .info.legend {
-        font-size: 9px; line-height: 12px;
+        font-size: 11px; line-height: 14px;
         padding: 4px 6px; max-width: 180px;
       }
       .info.legend i {
@@ -413,7 +418,7 @@ ui <- fluidPage(
         border-radius: 5px;
         box-shadow: 0 1px 4px rgba(0,0,0,0.18);
         color: #30363b;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 600;
         line-height: 1.3;
         padding: 5px 7px;
@@ -426,8 +431,8 @@ ui <- fluidPage(
         border-radius: 5px;
         box-shadow: 0 1px 4px rgba(0,0,0,0.18);
         color: #3c4043;
-        font-size: 10px;
-        line-height: 1.3;
+        font-size: 11px;
+        line-height: 1.35;
         padding: 5px 7px;
       }
 
@@ -436,11 +441,11 @@ ui <- fluidPage(
         padding: 9px 11px; box-sizing: border-box;
         border: 2px solid #68737d; border-radius: 7px;
         background: #f7f8f9; color: #454b50;
-        font-size: 10px; line-height: 1.4;
+        font-size: 11px; line-height: 1.45;
       }
       .methods-box-title {
         margin-bottom: 5px; color: #30363b;
-        font-size: 11px; font-weight: 600;
+        font-size: 13px; font-weight: 600;
       }
       .methods-box p { margin: 0 0 6px 0; }
       .methods-box p:last-child { margin-bottom: 0; }
@@ -448,7 +453,7 @@ ui <- fluidPage(
       .ug-number-label {
         background: rgba(255,255,255,0.38);
         border: 0; box-shadow: none;
-        color: #777f85; font-weight: 600; font-size: 9px;
+        color: #777f85; font-weight: 600; font-size: 10px;
         padding: 0 2px;
       }
       .ug-number-label-white {
