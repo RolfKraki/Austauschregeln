@@ -31,36 +31,31 @@ if (length(missing_columns) > 0L) {
   )
 }
 
-if ("data_version" %in% names(rules)) {
-  available_versions <- unique(
-    trimws(as.character(rules$data_version))
-  )
-  available_versions <- available_versions[
-    !is.na(available_versions) & nzchar(available_versions)
-  ]
-
-  data_version <- if (length(available_versions) > 0L) {
-    available_versions[1]
-  } else {
-    format(
-      file.info(app_data_file)$mtime,
-      "%Y-%m-%d"
-    )
+read_source_metadata <- function(column) {
+  if (!column %in% names(rules)) {
+    return("nicht angegeben")
   }
-} else {
-  data_version <- format(
-    file.info(app_data_file)$mtime,
-    "%Y-%m-%d %H:%M:%S"
-  )
+
+  values <- unique(trimws(as.character(rules[[column]])))
+  values <- values[!is.na(values) & nzchar(values)]
+  if (length(values) != 1L) {
+    stop("Expected exactly one value for ", column, " in the app data.")
+  }
+  values
 }
 
-data_version <- substr(data_version, 1L, 10L)
+source_modified_date <- read_source_metadata("source_modified_date")
+source_version <- read_source_metadata("source_version")
+if (source_modified_date != "nicht angegeben" &&
+    !grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", source_modified_date)) {
+  stop("Invalid source_modified_date in the app data.")
+}
 
-data_version_file <- gsub(
-  "[^0-9-]",
-  "",
-  data_version
-)
+data_version_file <- if (source_modified_date == "nicht angegeben") {
+  "unbekannt"
+} else {
+  source_modified_date
+}
 
 logo_candidates <- c(
   "www/logos/UFZ_Logo_RGB_DE.png",
@@ -899,7 +894,9 @@ server <- function(input, output, session) {
     paste0(
       "Art/Taxon-spezifische Bewertung benachbarter Ursprungsgebiete zur Eignung als Ersatzherkünfte",
       " | Datenstand: ",
-      data_version
+      source_modified_date,
+      " | Version: ",
+      source_version
     )
   })
 
@@ -1126,7 +1123,8 @@ server <- function(input, output, session) {
         Bewertung = display_decision,
         N_donor = n_donor,
         N_target = n_target,
-        Datenstand = data_version
+        Datenstand = source_modified_date,
+        Version = source_version
       )
 
     names(result) <- c(
@@ -1136,7 +1134,8 @@ server <- function(input, output, session) {
       "Bewertung",
       "N donor",
       "N target",
-      "Datenstand"
+      "Datenstand",
+      "Version"
     )
 
     export_filename <- paste0(
@@ -1145,7 +1144,9 @@ server <- function(input, output, session) {
       "_UG",
       sprintf("%02d", as.integer(input$target)),
       "_",
-      data_version_file
+      data_version_file,
+      "_v",
+      gsub("[^0-9A-Za-z.-]", "", source_version)
     )
 
     validate(
@@ -1165,7 +1166,7 @@ server <- function(input, output, session) {
           list(
             extend = "copy",
             text = "Kopieren",
-            exportOptions = list(columns = 0:6)
+            exportOptions = list(columns = 0:7)
           ),
           list(
             extend = "csv",
@@ -1173,17 +1174,17 @@ server <- function(input, output, session) {
             filename = export_filename,
             bom = TRUE,
             charset = "utf-8",
-            exportOptions = list(columns = 0:6)
+            exportOptions = list(columns = 0:7)
           ),
           list(
             extend = "excel",
             text = "Excel",
             filename = export_filename,
-            exportOptions = list(columns = 0:6)
+            exportOptions = list(columns = 0:7)
           )
         ),
         columnDefs = list(
-          list(targets = c(0, 1, 6), visible = FALSE),
+          list(targets = c(0, 1, 6, 7), visible = FALSE),
           list(targets = 2, width = "105px"),
           list(targets = 3, width = "235px"),
           list(targets = c(4, 5), width = "75px")

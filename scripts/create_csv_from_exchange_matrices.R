@@ -20,10 +20,8 @@ source_file <- file.path(
 )
 
 date_tag <- format(Sys.Date(), "%Y-%m-%d")
-data_version <- format(
-  Sys.time(),
-  "%Y-%m-%d %H:%M:%S %Z"
-)
+# Increase this version when the underlying analysis results change.
+source_version <- "1.0.0"
 
 long_file <- file.path(
   output_dir,
@@ -45,6 +43,14 @@ if (!file.exists(source_file)) {
     "Input file not found. Copy the RData file to:\n",
     source_file
   )
+}
+
+source_modified_date <- format(
+  file.info(source_file)$mtime,
+  "%Y-%m-%d"
+)
+if (is.na(source_modified_date)) {
+  stop("Could not determine the input RData file's modification date.")
 }
 
 # ------------------------------------------------------------------
@@ -201,6 +207,13 @@ exchange_rules_long <- imap_dfr(
   }
 )
 
+exchange_rules_long <- exchange_rules_long |>
+  mutate(
+    source_modified_date = source_modified_date,
+    source_version = source_version,
+    .before = 1
+  )
+
 # ------------------------------------------------------------------
 # 5. Validate the combined data
 # ------------------------------------------------------------------
@@ -309,8 +322,6 @@ if (nrow(decision_conflicts) > 0L) {
 
 app_rules <- exchange_rules_long |>
   mutate(
-    data_version = data_version,
-
     status = case_when(
       !(is_neighbor %in% TRUE) ~
         "not_neighbor",
@@ -344,7 +355,8 @@ app_rules <- exchange_rules_long |>
     )
   ) |>
   select(
-    data_version,
+    source_modified_date,
+    source_version,
     taxon,
     donor_id,
     target_id,
