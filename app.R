@@ -730,16 +730,16 @@ server <- function(input, output, session) {
     subtitle <- if (is.na(k)) {
       "Keine Clusterlösung verfügbar"
     } else if (k == 1) {
-      "Keine distinkte räumlich-genetische Struktur"
+      "K = 1 – keine distinkten genetischen Cluster"
     } else {
-      "Interpolierte genetische Clusterzugehörigkeit"
+      paste0("K = ", k, " genetische Cluster")
     }
 
     if (is.na(k)) {
       return(
         div(
           class = "admixture-panel",
-          div(class = "admixture-title", "Genetische Struktur"),
+          div(class = "admixture-title", "Räumlich-genetische Struktur"),
           div(class = "admixture-subtitle", subtitle),
           div(
             class = "admixture-map",
@@ -761,10 +761,9 @@ server <- function(input, output, session) {
         height = "100%"
       )
       explanation <- tagList(
-        tags$strong("Referenzwert: K = 1. "),
-        "Der Referenzwert für die Austauschentscheidung basiert hier auf ",
-        "den mittleren Unterschieden zwischen den UGs, da keine distinkte ",
-        "räumlich-genetische Struktur gefunden wurde."
+        "Es wurden keine distinkten genetischen Cluster festgestellt. ",
+        "Der Referenzwert für die Austauschentscheidung basiert daher ",
+        "auf den mittleren Unterschieden zwischen den UGs."
       )
     } else {
       file_name <- paste0(input$taxon, "_K", k, ".png")
@@ -787,23 +786,18 @@ server <- function(input, output, session) {
       }
 
       explanation <- tagList(
-        tags$strong(paste0("Referenzwert: K = ", k, ". ")),
-        "Der Referenzwert für die Austauschentscheidung wurde aus dieser ",
-        "Clusterlösung abgeleitet. Die Karte zeigt die zugehörige ",
-        "interpolierte genetische Clusterzugehörigkeit."
+        "Die Karte zeigt die interpolierte Zugehörigkeit zu den genetischen ",
+        "Clustern. Die dargestellte Clusterlösung wurde als plausibelste ",
+        "übergeordnete Ebene der genetischen Strukturierung ausgewählt; ",
+        "innerhalb der Cluster kann eine feinere Struktur bestehen. ",
+        "Aus dieser Clusterlösung wurde der Referenzwert für die ",
+        "Austauschentscheidung abgeleitet."
       )
     }
 
     div(
       class = "admixture-panel",
-      div(
-        class = "admixture-title",
-        if (k == 1) {
-          "UG-Struktur (K = 1)"
-        } else {
-          paste0("Genetische Cluster (K = ", k, ")")
-        }
-      ),
+      div(class = "admixture-title", "Räumlich-genetische Struktur"),
       div(class = "admixture-subtitle", subtitle),
       div(class = "admixture-map", map_content),
       div(class = "admixture-legend", explanation)
