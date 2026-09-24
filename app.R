@@ -275,8 +275,19 @@ ui <- fluidPage(
   tags$head(
     tags$style(htmltools::HTML(
       "
+      :root {
+        --app-content-height: calc(100dvh - 112px);
+      }
       body { overflow-y: auto; font-size: 15px; }
       .container-fluid { padding: 7px 12px; }
+      .content-row {
+        display: flex;
+        align-items: stretch;
+      }
+      .content-column {
+        height: var(--app-content-height);
+        min-height: 600px;
+      }
       h2 { margin: 3px 0 1px 0; font-size: 26px; }
       h4 { margin: 4px 0 6px 0; font-size: 17px; }
       .app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -298,9 +309,7 @@ ui <- fluidPage(
       .control-row label { font-size: 14px; margin-bottom: 2px; }
 
       .side-panel-stack {
-        width: 100%;
-        height: calc(100vh - 165px);
-        min-height: 320px; max-height: 680px;
+        width: 100%; height: 100%;
         display: flex; flex-direction: column; gap: 8px;
       }
       .side-picture-column {
@@ -377,8 +386,7 @@ ui <- fluidPage(
 
       .map-panel {
         width: 100%; max-width: none; margin: 0;
-        height: calc(100vh - 165px);
-        min-height: 320px; max-height: 680px;
+        height: 100%;
         border: 2px solid #68737d; border-radius: 7px;
         overflow: hidden; background: #eef2f3;
       }
@@ -387,6 +395,14 @@ ui <- fluidPage(
         background: #dceaf3 !important;
       }
 
+      .results-column {
+        display: flex;
+        flex-direction: column;
+      }
+      .results-column > .control-row,
+      .results-column > .table-panel {
+        flex: 0 0 auto;
+      }
       .table-panel {
         border: 1px solid #d9dde1; border-radius: 7px;
         padding: 7px 9px; background: white;
@@ -459,6 +475,7 @@ ui <- fluidPage(
 
       .methods-box {
         position: static; width: 100%; margin-top: 8px;
+        flex: 1 1 auto; min-height: 0; overflow-y: auto;
         padding: 9px 11px; box-sizing: border-box;
         border: 2px solid #68737d; border-radius: 7px;
         background: #f7f8f9; color: #454b50;
@@ -531,6 +548,29 @@ ui <- fluidPage(
       .citation-list li:last-child {
         margin-bottom: 0;
       }
+      @media (max-width: 767px) {
+        :root {
+          --app-content-height: auto;
+        }
+        .content-row {
+          display: block;
+        }
+        .content-column {
+          height: auto;
+          min-height: 0;
+          margin-bottom: 10px;
+        }
+        .map-panel,
+        .side-panel-stack {
+          height: 680px;
+        }
+        .results-column {
+          display: block;
+        }
+        .methods-box {
+          overflow-y: visible;
+        }
+      }
       "
     ))
   ),
@@ -552,8 +592,10 @@ ui <- fluidPage(
   ),
 
   fluidRow(
+    class = "content-row",
     column(
       4,
+      class = "content-column main-map-column",
       div(
         class = "map-panel",
         leafletOutput("ug_map", height = "100%")
@@ -562,7 +604,7 @@ ui <- fluidPage(
     
     column(
       2,
-      class = "side-picture-column",
+      class = "content-column side-picture-column",
       div(
         class = "side-panel-stack",
         uiOutput("admixture_panel"),
@@ -576,6 +618,7 @@ ui <- fluidPage(
     
     column(
       6,
+      class = "content-column results-column",
       fluidRow(
         class = "control-row",
         column(
