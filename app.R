@@ -261,6 +261,7 @@ map_lat_padding <- unname((map_bbox["ymax"] - map_bbox["ymin"]) * 0.05)
 map_colors <- c(
   other = "#F7F7F7",
   neighbor = "#BDBDBD",
+  not_evaluable = "#737B82",
   allowed = "#2E8B57",
   not_allowed = "#D95F02",
   allowed_small = "#A8D5BA",
@@ -428,6 +429,16 @@ ui <- fluidPage(
       .results-column > .control-row,
       .results-column > .table-panel {
         flex: 0 0 auto;
+      }
+      .evaluation-warning {
+        margin-bottom: 6px;
+        padding: 7px 9px;
+        border: 1px dashed #737B82;
+        border-radius: 7px;
+        background: #f1f3f4;
+        color: #394046;
+        font-size: 13px;
+        line-height: 1.4;
       }
       .table-panel {
         border: 1px solid #d9dde1; border-radius: 7px;
@@ -659,6 +670,7 @@ ui <- fluidPage(
           )
         )
       ),
+      uiOutput("evaluation_warning"),
       div(
         class = "table-panel",
         h4("Benachbarte Herkunftsgebiete"),
@@ -685,8 +697,9 @@ ui <- fluidPage(
           "strukturierte Differenzierung festgestellt (K = 1), dienen die ",
           "mittleren Unterschiede zwischen allen UGs als Referenzwert. ",
           "Blasse Farben kennzeichnen unsichere Bewertungen, wenn in ",
-          "mindestens einem der verglichenen UGs weniger als fünf ",
-          "Individuen untersucht wurden."
+          "mindestens einem der verglichenen UGs zwei bis vier Individuen ",
+          "untersucht wurden. Bei weniger als zwei Individuen in mindestens ",
+          "einem der verglichenen UGs ist keine Bewertung möglich."
         ),
         div(
           class = "citation-list",
@@ -925,16 +938,68 @@ server <- function(input, output, session) {
     selected_rules() |>
       filter(is_neighbor %in% TRUE) |>
       mutate(
+        donor_below_min = coalesce(n_donor < 2, TRUE),
+        target_below_min = coalesce(n_target < 2, TRUE),
+        evaluation_class = case_when(
+          donor_below_min | target_below_min ~ "not_evaluable",
+          too_small %in% TRUE ~ "provisional",
+          state_obs %in% c("allowed", "not_allowed") ~ "evaluated",
+          TRUE ~ "not_evaluated"
+        ),
         display_decision = case_when(
+          donor_below_min & target_below_min ~
+            "Keine Bewertung möglich: N < 2 in beiden UGs",
+          target_below_min ~
+            "Keine Bewertung möglich: N < 2 im Ziel-UG",
+          donor_below_min ~
+            "Keine Bewertung möglich: N < 2 im Ersatz-UG",
           too_small %in% TRUE & allowed_obs %in% TRUE ~
-            "Eher zulässig (geringe Stichprobenzahl, N < 5)",
+            "Eher zulässig (geringe Stichprobenzahl, N = 2–4)",
           too_small %in% TRUE & allowed_obs %in% FALSE ~
-            "Eher unzulässig (geringe Stichprobenzahl, N < 5)",
+            "Eher unzulässig (geringe Stichprobenzahl, N = 2–4)",
           state_obs == "allowed" ~ "Zulässig",
           state_obs == "not_allowed" ~ "Nicht zulässig",
           TRUE ~ "Nicht bewertet"
+        ),
+        decision_order = case_when(
+          state_obs == "allowed" & evaluation_class == "evaluated" ~ 1L,
+          allowed_obs %in% TRUE & evaluation_class == "provisional" ~ 2L,
+          state_obs == "not_allowed" & evaluation_class == "evaluated" ~ 3L,
+          allowed_obs %in% FALSE & evaluation_class == "provisional" ~ 4L,
+          evaluation_class == "not_evaluable" ~ 5L,
+          TRUE ~ 6L
         )
       )
+  })
+
+  output$evaluation_warning <- renderUI({
+    req(input$target)
+
+    target_sizes <- selected_rules() |>
+      distinct(n_target) |>
+      pull(n_target)
+    target_n <- target_sizes[!is.na(target_sizes)][1]
+
+    if (!is.na(target_n) && target_n >= 2) {
+      return(NULL)
+    }
+
+    sample_text <- if (is.na(target_n)) {
+      "liegen keine ausreichenden Stichprobendaten vor"
+    } else if (target_n == 1) {
+      "wurde nur ein Individuum untersucht"
+    } else {
+      "wurden keine Individuen untersucht"
+    }
+
+    div(
+      class = "evaluation-warning",
+      tags$strong("Keine Bewertung möglich: "),
+      paste0(
+        "Für das gewählte Ziel-UG ", sample_text,
+        " (N < 2)."
+      )
+    )
   })
 
   map_data <- reactive({
@@ -943,8 +1008,8 @@ server <- function(input, output, session) {
 
     decisions <- neighboring_results() |>
       select(
-        donor_id, display_decision, allowed_obs, too_small,
-        state_obs, n_donor, n_target
+        donor_id, display_decision, evaluation_class, allowed_obs,
+        too_small, state_obs, n_donor, n_target
       )
 
     ug_shape |>
@@ -952,6 +1017,7 @@ server <- function(input, output, session) {
       mutate(
         map_class = case_when(
           ug_id == target_id ~ "target",
+          evaluation_class == "not_evaluable" ~ "not_evaluable",
           too_small %in% TRUE & allowed_obs %in% TRUE ~ "allowed_small",
           too_small %in% TRUE & allowed_obs %in% FALSE ~ "not_allowed_small",
           state_obs == "allowed" ~ "allowed",
@@ -965,8 +1031,13 @@ server <- function(input, output, session) {
           TRUE ~ "Kein benachbartes Herkunftsgebiet"
         ),
         fill_color = unname(map_colors[map_class]),
-        border_color = if_else(ug_id == target_id, "#084C7F", "#666666"),
+        border_color = case_when(
+          ug_id == target_id ~ "#084C7F",
+          map_class == "not_evaluable" ~ "#3F464C",
+          TRUE ~ "#666666"
+        ),
         border_weight = if_else(ug_id == target_id, 3, 1),
+        border_dash = if_else(map_class == "not_evaluable", "5,4", ""),
         popup_text = paste0(
           "<strong>UG ", sprintf("%02d", ug_id), "</strong><br>",
           decision_label,
@@ -1111,6 +1182,7 @@ server <- function(input, output, session) {
         fillOpacity = 1,
         color = ~border_color,
         weight = ~border_weight,
+        dashArray = ~border_dash,
         opacity = 1,
         smoothFactor = 0.4,
         label = ~lapply(hover_text, htmltools::HTML),
@@ -1153,15 +1225,16 @@ server <- function(input, output, session) {
       addLegend(
         position = "bottomright",
         colors = unname(map_colors[c(
-          "neighbor", "allowed", "not_allowed",
+          "neighbor", "not_evaluable", "allowed", "not_allowed",
           "allowed_small", "not_allowed_small", "target"
         )]),
         labels = c(
           "Benachbart, nicht bewertet",
+          "Keine Bewertung möglich (N < 2)",
           "Zulässig",
           "Nicht zulässig",
-          "Eher zulässig (N < 5)",
-          "Eher\u00a0nicht\u00a0zulässig\u00a0(N\u00a0<\u00a05)",
+          "Eher zulässig (N = 2–4)",
+          "Eher\u00a0nicht\u00a0zulässig\u00a0(N\u00a0=\u00a02–4)",
           "Zielgebiet"
         ),
         opacity = 0.9,
@@ -1192,19 +1265,7 @@ server <- function(input, output, session) {
 
   output$results <- renderDT({
     result <- neighboring_results() |>
-      arrange(
-        factor(
-          display_decision,
-          levels = c(
-            "Zulässig",
-            "Vorläufig zulässig (N < 5)",
-            "Nicht zulässig",
-            "Vorläufig nicht zulässig (N < 5)",
-            "Nicht bewertet"
-          )
-        ),
-        donor_id
-      ) |>
+      arrange(decision_order, donor_id) |>
       transmute(
         Art = unname(taxon_labels[[input$taxon]]),
         Zielgebiet = sprintf("UG %02d", as.integer(input$target)),
