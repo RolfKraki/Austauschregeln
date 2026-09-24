@@ -568,6 +568,8 @@ ui <- fluidPage(
       .info.legend {
         font-size: 12px;
         line-height: 16px;
+        max-width: none;
+        white-space: nowrap;
       }
       
       .species-name-overlay {
