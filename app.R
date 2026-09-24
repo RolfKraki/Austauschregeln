@@ -275,12 +275,49 @@ ui <- fluidPage(
   tags$head(
     tags$style(htmltools::HTML(
       "
-      body { overflow-y: auto; font-size: 15px; }
-      .container-fluid { padding: 7px 12px; }
+      html, body {
+        min-height: 100%;
+      }
+      body {
+        overflow-y: auto;
+        font-size: 15px;
+      }
+      .container-fluid {
+        min-height: 100dvh;
+        padding: 7px 12px;
+        display: flex;
+        flex-direction: column;
+      }
+      .content-row {
+        flex: 1 1 auto;
+        min-height: 600px;
+        display: flex;
+        align-items: stretch;
+      }
+      .content-column {
+        height: auto;
+      }
       h2 { margin: 3px 0 1px 0; font-size: 26px; }
       h4 { margin: 4px 0 6px 0; font-size: 17px; }
-      .app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-      .app-header-logo { max-width: 220px; max-height: 64px; width: auto; height: auto; object-fit: contain; }
+      .app-header {
+        flex: 0 0 auto;
+      }
+      .results-logo-area {
+        flex: 1 1 auto;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        overflow: hidden;
+      }
+      .results-logo {
+        max-width: 80%;
+        max-height: 150px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+      }
       .app-subtitle { color: #5f6368; margin-bottom: 16px; font-size: 14px; }
       .selectize-control { z-index: 2000 !important; }
       .selectize-dropdown { z-index: 20000 !important; }
@@ -298,9 +335,7 @@ ui <- fluidPage(
       .control-row label { font-size: 14px; margin-bottom: 2px; }
 
       .side-panel-stack {
-        width: 100%;
-        height: calc(100vh - 165px);
-        min-height: 320px; max-height: 680px;
+        width: 100%; height: 100%;
         display: flex; flex-direction: column; gap: 8px;
       }
       .side-picture-column {
@@ -377,8 +412,7 @@ ui <- fluidPage(
 
       .map-panel {
         width: 100%; max-width: none; margin: 0;
-        height: calc(100vh - 165px);
-        min-height: 320px; max-height: 680px;
+        height: 100%;
         border: 2px solid #68737d; border-radius: 7px;
         overflow: hidden; background: #eef2f3;
       }
@@ -387,6 +421,14 @@ ui <- fluidPage(
         background: #dceaf3 !important;
       }
 
+      .results-column {
+        display: flex;
+        flex-direction: column;
+      }
+      .results-column > .control-row,
+      .results-column > .table-panel {
+        flex: 0 0 auto;
+      }
       .table-panel {
         border: 1px solid #d9dde1; border-radius: 7px;
         padding: 7px 9px; background: white;
@@ -459,6 +501,7 @@ ui <- fluidPage(
 
       .methods-box {
         position: static; width: 100%; margin-top: 8px;
+        flex: 0 0 auto;
         padding: 9px 11px; box-sizing: border-box;
         border: 2px solid #68737d; border-radius: 7px;
         background: #f7f8f9; color: #454b50;
@@ -531,20 +574,37 @@ ui <- fluidPage(
       .citation-list li:last-child {
         margin-bottom: 0;
       }
+      @media (max-width: 767px) {
+        .container-fluid {
+          min-height: 0;
+          display: block;
+        }
+        .content-row {
+          display: block;
+        }
+        .content-column {
+          height: auto;
+          min-height: 0;
+          margin-bottom: 10px;
+        }
+        .map-panel,
+        .side-panel-stack {
+          height: 680px;
+        }
+        .results-column {
+          display: block;
+        }
+        .results-logo-area {
+          min-height: 120px;
+        }
+      }
       "
     ))
   ),
 
   div(
     class = "app-header",
-    h2("RegioDiv: Ersatzherkünfte für Regiosaatgut"),
-    if (!is.na(logo_file)) {
-      tags$img(
-        src = sub("^www/", "", logo_file),
-        alt = "Logo",
-        class = "app-header-logo"
-      )
-    }
+    h2("RegioDiv: Ersatzherkünfte für Regiosaatgut")
   ),
   div(
     class = "app-subtitle",
@@ -552,8 +612,10 @@ ui <- fluidPage(
   ),
 
   fluidRow(
+    class = "content-row",
     column(
       4,
+      class = "content-column main-map-column",
       div(
         class = "map-panel",
         leafletOutput("ug_map", height = "100%")
@@ -562,7 +624,7 @@ ui <- fluidPage(
     
     column(
       2,
-      class = "side-picture-column",
+      class = "content-column side-picture-column",
       div(
         class = "side-panel-stack",
         uiOutput("admixture_panel"),
@@ -576,6 +638,7 @@ ui <- fluidPage(
     
     column(
       6,
+      class = "content-column results-column",
       fluidRow(
         class = "control-row",
         column(
@@ -645,7 +708,17 @@ ui <- fluidPage(
             )
           )
         )
-      )
+      ),
+      if (!is.na(logo_file)) {
+        div(
+          class = "results-logo-area",
+          tags$img(
+            src = sub("^www/", "", logo_file),
+            alt = "Logo",
+            class = "results-logo"
+          )
+        )
+      }
     )
   )
 )
