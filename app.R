@@ -275,23 +275,49 @@ ui <- fluidPage(
   tags$head(
     tags$style(htmltools::HTML(
       "
-      :root {
-        --app-content-height: calc(100dvh - 112px);
+      html, body {
+        min-height: 100%;
       }
-      body { overflow-y: auto; font-size: 15px; }
-      .container-fluid { padding: 7px 12px; }
+      body {
+        overflow-y: auto;
+        font-size: 15px;
+      }
+      .container-fluid {
+        min-height: 100dvh;
+        padding: 7px 12px;
+        display: flex;
+        flex-direction: column;
+      }
       .content-row {
+        flex: 1 1 auto;
+        min-height: 600px;
         display: flex;
         align-items: stretch;
       }
       .content-column {
-        height: var(--app-content-height);
-        min-height: 600px;
+        height: auto;
       }
       h2 { margin: 3px 0 1px 0; font-size: 26px; }
       h4 { margin: 4px 0 6px 0; font-size: 17px; }
-      .app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-      .app-header-logo { max-width: 220px; max-height: 64px; width: auto; height: auto; object-fit: contain; }
+      .app-header {
+        flex: 0 0 auto;
+      }
+      .results-logo-area {
+        flex: 1 1 auto;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        overflow: hidden;
+      }
+      .results-logo {
+        max-width: 80%;
+        max-height: 150px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+      }
       .app-subtitle { color: #5f6368; margin-bottom: 16px; font-size: 14px; }
       .selectize-control { z-index: 2000 !important; }
       .selectize-dropdown { z-index: 20000 !important; }
@@ -475,7 +501,7 @@ ui <- fluidPage(
 
       .methods-box {
         position: static; width: 100%; margin-top: 8px;
-        flex: 1 1 auto; min-height: 0; overflow-y: auto;
+        flex: 0 0 auto;
         padding: 9px 11px; box-sizing: border-box;
         border: 2px solid #68737d; border-radius: 7px;
         background: #f7f8f9; color: #454b50;
@@ -549,8 +575,9 @@ ui <- fluidPage(
         margin-bottom: 0;
       }
       @media (max-width: 767px) {
-        :root {
-          --app-content-height: auto;
+        .container-fluid {
+          min-height: 0;
+          display: block;
         }
         .content-row {
           display: block;
@@ -567,8 +594,8 @@ ui <- fluidPage(
         .results-column {
           display: block;
         }
-        .methods-box {
-          overflow-y: visible;
+        .results-logo-area {
+          min-height: 120px;
         }
       }
       "
@@ -577,14 +604,7 @@ ui <- fluidPage(
 
   div(
     class = "app-header",
-    h2("RegioDiv: Ersatzherkünfte für Regiosaatgut"),
-    if (!is.na(logo_file)) {
-      tags$img(
-        src = sub("^www/", "", logo_file),
-        alt = "Logo",
-        class = "app-header-logo"
-      )
-    }
+    h2("RegioDiv: Ersatzherkünfte für Regiosaatgut")
   ),
   div(
     class = "app-subtitle",
@@ -688,7 +708,17 @@ ui <- fluidPage(
             )
           )
         )
-      )
+      ),
+      if (!is.na(logo_file)) {
+        div(
+          class = "results-logo-area",
+          tags$img(
+            src = sub("^www/", "", logo_file),
+            alt = "Logo",
+            class = "results-logo"
+          )
+        )
+      }
     )
   )
 )
