@@ -148,7 +148,7 @@ taxon_choices <- setNames(
   unname(taxon_labels)
 )
 
-species_picture_files <- c(
+species_picture_files <- list(
   "ACH.AGG" = "ach.agg.jpg",
   "ACH.MIL" = "ach.agg.jpg",
   "ACH.PRA" = "ach.col.jpg",
@@ -157,6 +157,7 @@ species_picture_files <- c(
   "CAM.ROT" = "cam.rot_square_800px_v2.JPG",
   "CAM.R2x" = "cam.rot_square_800px_v2.JPG",
   "CAM.R4x" = "cam.rot_square_800px_v2.JPG",
+  "CEN.JAC" = "cen.jac.jpg",
   "CYN.CRI" = "cyn_cri_02_black_800.JPG",
   "FES.RUB" = "fes.rub_02_black_800px.JPG",
   "FES.RRU" = "fes.rub_02_black_800px.JPG",
@@ -164,16 +165,17 @@ species_picture_files <- c(
   "GAL.ALB" = "gal.alb_black_800px.JPG",
   "HYP.RAD" = "hyp.rad_03_black_800px.jpg",
   "KNA.A4x" = "kna.arv_01_black_800.JPG",
+  "LAT.PRA" = "lat.pra.jpg",
   "LEU.AGG" = "leu.agg_03_black_800px.JPG",
   "LEU.IRC" = "leu.agg_03_black_800px.JPG",
   "LEU.VUL" = "leu.agg_03_black_800px.JPG",
-  "LOT.COR" = "lot.cor_800px.JPG",
+  "LOT.COR" = c("lot.cor_600px.JPG", "lot.cor_800px.JPG"),
   "PIM.SAX" = "pim.sax.jpg",
   "PIM.S2x" = "pim.sax.jpg",
   "PIM.S4x" = "pim.sax.jpg",
   "RAN.ACR" = "ran.acr_04_black_800px.JPG",
   "SAL.PRA" = "sal.pra_04_black_800px.JPG",
-  "SIL.VUL" = "sil.vul.jpg",
+  "SIL.VUL" = c("sil.vul.jpg", "sil.vul_v2.jpg"),
   "TRA.AGG" = "tra.agg_01_black_800px.jpg",
   "TRA.PRA" = "tra.agg_01_black_800px.jpg",
   "TRA.ORI" = "tra.agg_01_black_800px.jpg"
@@ -702,13 +704,21 @@ server <- function(input, output, session) {
   output$species_picture <- renderUI({
     req(input$taxon)
 
-    file_name <- unname(species_picture_files[input$taxon])
+    candidate_files <- species_picture_files[[input$taxon]]
 
-    if (
-      length(file_name) == 1L &&
-      !is.na(file_name) &&
-      file.exists(file.path("www", "species_pics", file_name))
-    ) {
+    available_files <- candidate_files[
+      file.exists(
+        file.path("www", "species_pics", candidate_files)
+      )
+    ]
+
+    file_name <- if (length(available_files) > 0L) {
+      available_files[[sample.int(length(available_files), size = 1L)]]
+    } else {
+      NA_character_
+    }
+
+    if (!is.na(file_name)) {
       tagList(
         tags$img(
           src = paste0("species_pics/", file_name),
