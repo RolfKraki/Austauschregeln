@@ -261,7 +261,7 @@ map_lat_padding <- unname((map_bbox["ymax"] - map_bbox["ymin"]) * 0.05)
 map_colors <- c(
   other = "#F7F7F7",
   neighbor = "#BDBDBD",
-  not_evaluable = "#737B82",
+  not_evaluable = "#BDBDBD",
   allowed = "#2E8B57",
   not_allowed = "#D95F02",
   allowed_small = "#A8D5BA",
@@ -568,6 +568,8 @@ ui <- fluidPage(
       .info.legend {
         font-size: 12px;
         line-height: 16px;
+        max-width: none;
+        white-space: nowrap;
       }
       
       .species-name-overlay {
@@ -1225,11 +1227,10 @@ server <- function(input, output, session) {
       addLegend(
         position = "bottomright",
         colors = unname(map_colors[c(
-          "neighbor", "not_evaluable", "allowed", "not_allowed",
+          "not_evaluable", "allowed", "not_allowed",
           "allowed_small", "not_allowed_small", "target"
         )]),
         labels = c(
-          "Benachbart, nicht bewertet",
           "Keine Bewertung möglich (N < 2)",
           "Zulässig",
           "Nicht zulässig",
