@@ -173,6 +173,7 @@ species_picture_files <- list(
   "PIM.SAX" = "pim.sax.jpg",
   "PIM.S2x" = "pim.sax.jpg",
   "PIM.S4x" = "pim.sax.jpg",
+  "PRU.VUL" = "pru.vul.jpg",
   "RAN.ACR" = "ran.acr_04_black_800px.JPG",
   "SAL.PRA" = "sal.pra_04_black_800px.JPG",
   "SIL.VUL" = c("sil.vul.jpg", "sil.vul_v2.jpg"),
