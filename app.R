@@ -526,6 +526,24 @@ ui <- fluidPage(
       .methods-box p { margin: 0 0 6px 0; }
       .methods-box p:last-child { margin-bottom: 0; }
 
+      .application-disclaimer {
+        flex: 0 0 auto;
+        margin-top: 8px; padding: 12px 14px;
+        box-sizing: border-box;
+        border: 1px solid #e2ce91;
+        border-left: 5px solid #9b741b;
+        border-radius: 7px;
+        background: #fff8e1; color: #493b1b;
+        font-size: 13px; line-height: 1.5;
+      }
+      .application-disclaimer-title {
+        display: flex; align-items: baseline; gap: 7px;
+        margin-bottom: 6px;
+        font-size: 15px; font-weight: 600;
+      }
+      .application-disclaimer-icon { color: #795b15; }
+      .application-disclaimer p { margin: 0; }
+
       .ug-number-label {
         background: rgba(255,255,255,0.38);
         border: 0; box-shadow: none;
@@ -723,6 +741,29 @@ ui <- fluidPage(
               "und Empfehlungen für die Regiosaatgut-Praxis', BfN-Schriften, 687: 315."
             )
           )
+        )
+      ),
+      div(
+        class = "application-disclaimer",
+        role = "note",
+        `aria-labelledby` = "application-disclaimer-title",
+        div(
+          id = "application-disclaimer-title",
+          class = "application-disclaimer-title",
+          tags$span(
+            class = "application-disclaimer-icon",
+            `aria-hidden` = "true",
+            "\u24d8"
+          ),
+          tags$strong("Wichtiger Hinweis zur Anwendung")
+        ),
+        tags$p(
+          "Die Bewertungen beruhen auf den derzeit verfügbaren Daten. ",
+          "Zusätzliche Daten oder andere Verfahren zur Analyse genetischer ",
+          "Distanzen und Strukturen können zu abweichenden Bewertungen führen. ",
+          "Die Ergebnisse dienen als Orientierung für konkrete ",
+          "Austauschentscheidungen und ersetzen nicht die Prüfung durch ",
+          "die zuständigen Behörden."
         )
       ),
       if (!is.na(logo_file)) {
