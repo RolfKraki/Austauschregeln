@@ -292,7 +292,7 @@ ui <- fluidPage(
       }
       .content-row {
         flex: 1 1 auto;
-        min-height: 600px;
+        min-height: 360px;
         display: flex;
         align-items: stretch;
       }
@@ -305,12 +305,12 @@ ui <- fluidPage(
         flex: 0 0 auto;
       }
       .results-logo-area {
-        flex: 1 1 auto;
-        min-height: 80px;
+        flex: 1 1 0;
+        min-height: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 12px;
+        padding: 6px;
         overflow: hidden;
       }
       .results-logo {
@@ -319,6 +319,16 @@ ui <- fluidPage(
         width: auto;
         height: auto;
         object-fit: contain;
+      }
+      .results-column.logo-above-controls .results-logo-area {
+        order: -1;
+        flex: 0 0 42px;
+        justify-content: flex-end;
+        padding: 0 0 6px;
+      }
+      .results-column.logo-above-controls .results-logo {
+        max-width: 45%;
+        max-height: 36px !important;
       }
       .app-subtitle { color: #5f6368; margin-bottom: 16px; font-size: 14px; }
       .selectize-control { z-index: 2000 !important; }
@@ -427,8 +437,7 @@ ui <- fluidPage(
         display: flex;
         flex-direction: column;
       }
-      .results-column > .control-row,
-      .results-column > .table-panel {
+      .results-column > :not(.results-logo-area) {
         flex: 0 0 auto;
       }
       .evaluation-warning {
@@ -624,13 +633,88 @@ ui <- fluidPage(
           height: 680px;
         }
         .results-column {
-          display: block;
+          display: flex;
         }
         .results-logo-area {
-          min-height: 120px;
+          min-height: 0;
         }
       }
       "
+    )),
+    tags$script(htmltools::HTML(
+      "(function() {
+  function initResponsiveLogo() {
+    var row = document.querySelector('.content-row');
+    var column = document.querySelector('.results-column');
+    if (!row || !column) return;
+    var logoArea = column.querySelector('.results-logo-area');
+    var logo = column.querySelector('.results-logo');
+    var pending = false;
+    function outerHeight(element) {
+      var style = window.getComputedStyle(element);
+      return element.getBoundingClientRect().height +
+        (parseFloat(style.marginTop) || 0) +
+        (parseFloat(style.marginBottom) || 0);
+    }
+    function fitLayout() {
+      pending = false;
+      if (window.matchMedia('(max-width: 767px)').matches) {
+        row.style.height = '';
+        row.style.flex = '';
+        column.classList.add('logo-above-controls');
+        if (logo) logo.style.maxHeight = '';
+        return;
+      }
+      var container = row.parentElement;
+      var bottomPadding = parseFloat(window.getComputedStyle(container).paddingBottom) || 0;
+      // In an iframe, innerHeight is the available height of the app itself.
+      var available = Math.floor(window.innerHeight -
+        row.getBoundingClientRect().top - bottomPadding);
+      var contentHeight = Array.from(column.children).reduce(function(total, child) {
+        return child === logoArea ? total : total + outerHeight(child);
+      }, 0);
+      var compact = !!logoArea && available - contentHeight < 60;
+      column.classList.toggle('logo-above-controls', compact);
+      var required = contentHeight + (logoArea ? (compact ? 42 : 60) : 0);
+      var height = Math.ceil(Math.max(360, available, required));
+      row.style.height = height + 'px';
+      row.style.flex = '0 0 ' + height + 'px';
+      if (logo) {
+        logo.style.maxHeight = (compact ? 36 :
+          Math.min(150, Math.max(0, height - contentHeight - 12))) + 'px';
+      }
+    }
+    function scheduleFit() {
+      if (!pending) {
+        pending = true;
+        window.requestAnimationFrame(fitLayout);
+      }
+    }
+    window.addEventListener('resize', scheduleFit);
+    window.addEventListener('load', scheduleFit);
+    if (window.ResizeObserver) {
+      var observer = new ResizeObserver(scheduleFit);
+      Array.from(column.children).forEach(function(child) {
+        if (child !== logoArea) observer.observe(child);
+      });
+      document.querySelectorAll('.app-header, .app-subtitle').forEach(function(el) {
+        observer.observe(el);
+      });
+    }
+    if (window.jQuery) {
+      window.jQuery(document).on(
+        'shiny:connected shiny:value shiny:visualchange draw.dt', scheduleFit
+      );
+    }
+    if (logo) logo.addEventListener('load', scheduleFit);
+    scheduleFit();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initResponsiveLogo);
+  } else {
+    initResponsiveLogo();
+  }
+})();"
     ))
   ),
 
