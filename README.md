@@ -8,6 +8,8 @@ target origin region (UG).
 - `app.R`: Shiny application with interactive UG map and compact results table.
 - `scripts/create_csv_from_exchange_matrices.R`: validates the analytical result
   object and generates the app data.
+- `scripts/export_exchange_rules_matrix.R`: exports Excel matrices of allowed
+  neighbouring donor UGs for all target UGs and taxa.
 - `data/input/`: local input object; the `.RData` file is not committed.
 - `data/exchange_rules_app.csv`: stable app-ready dataset.
 - `data/output/`: local dated diagnostic exports; not committed.
@@ -47,6 +49,42 @@ The export records the input `.RData` file's modification date and the
 `source_version` specified near the top of the script. Increase that version
 when the analysis results change, then commit the regenerated CSV so the app
 shows the new `Datenstand` and version.
+
+## Export an Excel summary matrix
+
+With `meanPairwisePCA4neighbors_v4d_tables.RData` in `data/input/`, run:
+
+```r
+install.packages("openxlsx") # once; here is already required above
+source("scripts/export_exchange_rules_matrix.R")
+```
+
+This creates `data/output/exchange_rules_summary.xlsx` and replaces that local
+workbook on later runs. It reads the RData directly and leaves the app CSV
+unchanged.
+
+- `Zulaessig`: target UGs 1–22 in the first column, followed by one column per
+  taxon, using the app's species names. Cells list confirmed allowed neighbouring
+  donor UGs in ascending order, separated by commas (for example `2, 5, 8`).
+- `Vorlaeufig`: the same matrix for provisionally allowed donors, shown separately
+  because at least one sample size is below five.
+- `Taxa`: taxon codes and species names.
+- `Hinweise`: decision criteria, cell meanings and source/export dates.
+
+Both matrices follow the app's sample-size and decision rules. Donor and target
+must each have at least two sampled individuals. Confirmed decisions use
+`state_obs == "allowed"` with `too_small == FALSE`; provisional decisions use
+`allowed_obs == TRUE` with `too_small == TRUE`. Only neighbouring donors are
+listed, and the target itself is excluded. Direction is preserved: a donor
+listed for one target is not automatically allowed in the reverse direction.
+
+`-` means no allowed donor in that sheet's decision class. Text `NA` means no
+neighbouring pair is evaluable for that taxon and target, in either class.
+An omitted donor can also be unevaluated; these cells are summaries of allowed
+transfers, not complete lists of rejections. All taxa in the RData are retained,
+including aggregates and cytotypes; unknown display names fall back to taxon
+codes. The script checks all 484 unique donor-target combinations per taxon and
+reads both saved matrices back to verify their contents.
 
 ## Run the app
 
