@@ -82,17 +82,16 @@ export_exchange_rules_matrix <- function(input_file, output_file,
     if (nrow(d) != 484L || anyDuplicated(paste(donor, target))) {
       stop("Expected all 484 unique donor-target pairs for ", taxon)
     }
-    neighbor <- as_flag(d$is_neighbor, "is_neighbor", taxon)
-    small <- as_flag(d$too_small, "too_small", taxon)
+    # Match app.R's `%in% TRUE`: missing flags are not positive flags.
+    # Missing sample counts are handled below, before classifying decisions.
+    neighbor <- as_flag(d$is_neighbor, "is_neighbor", taxon) %in% TRUE
+    small <- as_flag(d$too_small, "too_small", taxon) %in% TRUE
     allowed <- as_flag(d$allowed_obs, "allowed_obs", taxon)
     n_donor <- as_count(d$n_donor, "n_donor", taxon)
     n_target <- as_count(d$n_target, "n_target", taxon)
     state <- trimws(as.character(d$state_obs))
     if (any(!is.na(state) & !(state %in% c("allowed", "not_allowed", "not_considered")))) {
       stop("Unexpected state_obs for ", taxon)
-    }
-    if (anyNA(neighbor) || anyNA(small)) {
-      stop("Missing is_neighbor or too_small flags for ", taxon)
     }
     # Preserve direction: donor is listed in the row for its TARGET.
     # Match app.R: N < 2 is never evaluable; too_small takes precedence
