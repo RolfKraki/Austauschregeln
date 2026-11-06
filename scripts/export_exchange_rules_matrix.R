@@ -159,12 +159,34 @@ export_exchange_rules_matrix <- function(input_file, output_file,
   openxlsx::saveWorkbook(wb, output_file, overwrite = TRUE)
   # Verify the saved matrix, including comma-separated text and all 22 UGs.
   for (sheet in c("Zulaessig", "Vorlaeufig")) {
-    actual <- openxlsx::read.xlsx(output_file, sheet = sheet, check.names = FALSE,
-                                 na.strings = character())
+    # Read headers as ordinary cells: read.xlsx() can normalise spaces in
+    # column names even when check.names = FALSE. Compare text cell values
+    # instead of data-frame names, row names or inferred column classes.
+    actual <- openxlsx::read.xlsx(
+      output_file, sheet = sheet, colNames = FALSE,
+      skipEmptyRows = FALSE, skipEmptyCols = FALSE,
+      na.strings = character()
+    )
     expected <- sheets[[sheet]]
-    if (!identical(names(actual), names(expected)) ||
-        !isTRUE(all.equal(actual, expected, check.attributes = FALSE))) {
-      stop("Excel read-back verification failed for sheet ", sheet)
+    expected_cells <- unname(rbind(
+      names(expected),
+      do.call(cbind, lapply(expected, as.character))
+    ))
+    actual_cells <- unname(do.call(cbind, lapply(actual, as.character)))
+    if (!identical(dim(actual_cells), dim(expected_cells))) {
+      stop("Excel read-back dimensions differ for sheet ", sheet,
+           ": expected ", paste(dim(expected_cells), collapse = " x "),
+           ", read ", paste(dim(actual_cells), collapse = " x "),
+           ". Workbook: ", output_file)
+    }
+    mismatch <- is.na(actual_cells) | actual_cells != expected_cells
+    if (any(mismatch)) {
+      first <- which(mismatch, arr.ind = TRUE)[1L, ]
+      stop("Excel read-back mismatch for sheet ", sheet,
+           " at row ", first[1L], ", column ", first[2L],
+           ": expected '", expected_cells[first[1L], first[2L]],
+           "', read '", actual_cells[first[1L], first[2L]],
+           "'. Workbook: ", output_file)
     }
   }
   message("Excel summary: ", normalizePath(output_file, winslash = "/"))
