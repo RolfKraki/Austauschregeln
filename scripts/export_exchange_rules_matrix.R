@@ -162,6 +162,69 @@ export_exchange_rules_matrix <- function(input_file, output_file,
   }
   dir.create(dirname(output_file), recursive = TRUE, showWarnings = FALSE)
   openxlsx::saveWorkbook(wb, output_file, overwrite = TRUE)
+
+  # openxlsx has no public API for Excel's ignoredErrors setting.
+  # Add the standard OOXML setting to the two matrix sheets after saving.
+  # zip is already an openxlsx dependency. Cell values are untouched.
+  suppress_number_as_text <- function(path) {
+    unpack_dir <- tempfile("exchange_rules_xlsx_")
+    dir.create(unpack_dir)
+    on.exit(unlink(unpack_dir, recursive = TRUE), add = TRUE)
+    utils::unzip(path, exdir = unpack_dir)
+    for (sheet in c("Zulaessig", "Vorlaeufig")) {
+      sheet_index <- match(sheet, names(sheets))
+      xml_file <- file.path(unpack_dir, "xl", "worksheets",
+                            paste0("sheet", sheet_index, ".xml"))
+      xml <- paste(readLines(xml_file, encoding = "UTF-8", warn = FALSE),
+                   collapse = "\n")
+      cell_range <- paste0("B2:", openxlsx::int2col(ncol(sheets[[sheet]])),
+                           nrow(sheets[[sheet]]) + 1L)
+      rule <- paste0('<ignoredErrors><ignoredError sqref="', cell_range,
+                     '" numberStoredAsText="1"/></ignoredErrors>')
+      # These trailing elements must follow ignoredErrors in worksheet XML.
+      tail_pattern <- paste0(
+        "<(?:smartTags|drawing|legacyDrawing|legacyDrawingHF|picture|",
+        "oleObjects|controls|webPublishItems|tableParts|extLst)(?:\\s|/?>)",
+        "|</worksheet>"
+      )
+      position <- regexpr(tail_pattern, xml, perl = TRUE)[1L]
+      if (position < 1L || grepl("<ignoredErrors", xml, fixed = TRUE)) {
+        stop("Could not add Excel warning suppression to sheet ", sheet)
+      }
+      xml <- paste0(substr(xml, 1L, position - 1L), rule,
+                    substr(xml, position, nchar(xml)))
+      writeLines(enc2utf8(xml), xml_file, useBytes = TRUE)
+    }
+    rebuilt <- tempfile(fileext = ".xlsx")
+    on.exit(unlink(rebuilt), add = TRUE)
+    zip::zipr(
+      zipfile = rebuilt,
+      files = list.files(unpack_dir, recursive = TRUE, all.files = TRUE,
+                         no.. = TRUE),
+      root = unpack_dir, mode = "mirror", include_directories = FALSE
+    )
+    # Verify the rule in the rebuilt archive before replacing the output.
+    for (sheet in c("Zulaessig", "Vorlaeufig")) {
+      member <- paste0("xl/worksheets/sheet",
+                       match(sheet, names(sheets)), ".xml")
+      connection <- unz(rebuilt, member, encoding = "UTF-8")
+      saved_xml <- tryCatch(
+        paste(readLines(connection, warn = FALSE), collapse = "\n"),
+        finally = close(connection)
+      )
+      cell_range <- paste0("B2:", openxlsx::int2col(ncol(sheets[[sheet]])),
+                           nrow(sheets[[sheet]]) + 1L)
+      expected_rule <- paste0('<ignoredError sqref="', cell_range,
+                              '" numberStoredAsText="1"/>')
+      if (!grepl(expected_rule, saved_xml, fixed = TRUE)) {
+        stop("Excel warning suppression verification failed for ", sheet)
+      }
+    }
+    if (!file.copy(rebuilt, path, overwrite = TRUE)) {
+      stop("Could not save the workbook with Excel warning suppression: ", path)
+    }
+  }
+  suppress_number_as_text(output_file)
   # Verify the saved matrix, including comma-separated text and all 22 UGs.
   for (sheet in c("Zulaessig", "Vorlaeufig")) {
     # Read headers as ordinary cells: read.xlsx() can normalise spaces in
