@@ -64,8 +64,9 @@ workbook on later runs. It reads the RData directly and leaves the app CSV
 unchanged.
 
 - `Zulaessig`: target UGs 1–22 in the first column, followed by one column per
-  taxon, using the app's species names. Cells list confirmed allowed neighbouring
-  donor UGs in ascending order, separated by commas (for example `2, 5, 8`).
+  taxon, using the app's species names. Cells list confirmed and provisionally allowed
+  neighbouring donor UGs together, in numerical order and separated by commas
+  (for example `2, 5*, 8`). An asterisk marks each provisionally allowed UG.
 - `Vorlaeufig`: the same matrix for provisionally allowed donors, shown separately
   because at least one sample size is below five.
 - `Taxa`: taxon codes and species names.
@@ -78,7 +79,8 @@ must each have at least two sampled individuals. Confirmed decisions use
 listed, and the target itself is excluded. Direction is preserved: a donor
 listed for one target is not automatically allowed in the reverse direction.
 
-`-` means no allowed donor in that sheet's decision class. Text `NA` means no
+`-` means no confirmed or provisionally allowed donor in `Zulaessig`, or no
+provisionally allowed donor in `Vorlaeufig`. Text `NA` means no
 neighbouring pair is evaluable for that taxon and target, in either class.
 An omitted donor can also be unevaluated; these cells are summaries of allowed
 transfers, not complete lists of rejections. All taxa in the RData are retained,
