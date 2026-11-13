@@ -66,7 +66,7 @@ export_exchange_rules_matrix <- function(input_file, output_file,
   ordering <- order(labels, taxa)
   taxa <- taxa[ordering]
   labels <- labels[ordering]
-  confirmed <- provisional <- data.frame(`Ziel-UG` = 1:22, check.names = FALSE)
+  combined <- confirmed <- provisional <- data.frame(`Ziel-UG` = 1:22, check.names = FALSE)
 
   for (i in seq_along(taxa)) {
     taxon <- taxa[i]
@@ -103,15 +103,20 @@ export_exchange_rules_matrix <- function(input_file, output_file,
     keep_confirmed <- evaluated & state %in% "allowed"
     keep_provisional <- provisional_evaluated & allowed %in% TRUE
 
-    summarise_zones <- function(keep) {
+    summarise_zones <- function(keep, mark = rep(FALSE, length(donor))) {
       vapply(1:22, function(ug) {
         # NA means no evaluable neighbouring pair of either class.
         if (!any(target == ug & (evaluated | provisional_evaluated))) return("NA")
         zones <- sort(unique(donor[target == ug & keep]))
         if (!length(zones)) return("-")
-        paste(zones, collapse = ", ")
+        marked_zones <- donor[target == ug & mark]
+        paste(paste0(zones, ifelse(zones %in% marked_zones, "*", "")),
+              collapse = ", ")
       }, character(1))
     }
+    combined[[labels[i]]] <- summarise_zones(
+      keep_confirmed | keep_provisional, mark = keep_provisional
+    )
     confirmed[[labels[i]]] <- summarise_zones(keep_confirmed)
     provisional[[labels[i]]] <- summarise_zones(keep_provisional)
   }
@@ -120,10 +125,10 @@ export_exchange_rules_matrix <- function(input_file, output_file,
     Eintrag = c("Zulaessig", "Vorlaeufig", "Richtung", "Zellwerte", "NA",
                 "Unvollstaendige Bewertung", "Quelle", "Quelldatum", "Exportdatum"),
     Beschreibung = c(
-      "Bestätigt zulässige Nachbar-UGs: state_obs = allowed, too_small = FALSE, N in beiden UGs >= 2.",
-      "Eher zulässige Nachbar-UGs: too_small = TRUE, allowed_obs = TRUE, N in beiden UGs >= 2. Separat von bestätigten Zulassungen.",
+      "Zulässige und vorläufig zulässige Nachbar-UGs gemeinsam. * = vorläufig zulässig (too_small = TRUE, allowed_obs = TRUE). Ohne * = bestätigt zulässig (state_obs = allowed, too_small nicht TRUE). N in beiden UGs >= 2.",
+      "Eher zulässige Nachbar-UGs: too_small = TRUE, allowed_obs = TRUE, N in beiden UGs >= 2. Zusätzlich als eigene Übersicht; im Blatt Zulaessig mit * markiert.",
       "Zeile = Ziel-UG; Zellinhalt = benachbarte Herkunfts-/Spender-UGs. Das Ziel-UG selbst wird nicht aufgeführt.",
-      "UG-Nummern aufsteigend, durch Komma getrennt. - = keine zulässige Herkunft in der jeweiligen Bewertungsklasse.",
+      "UG-Nummern aufsteigend, durch Komma getrennt, z. B. 2, 5*, 8. - = keine (auch nicht vorläufig) zulässige Herkunft im Blatt Zulaessig; im Blatt Vorlaeufig keine vorläufig zulässige Herkunft.",
       "NA = für dieses Taxon und Ziel-UG ist keine benachbarte Herkunft bewertbar (weder bestätigt noch vorläufig).",
       "Listen enthalten nur bewertbare Paare; eine nicht aufgeführte UG kann auch unbewertet sein. NA und - sind Textwerte.",
       basename(input_file),
@@ -133,7 +138,7 @@ export_exchange_rules_matrix <- function(input_file, output_file,
   )
   taxon_key <- data.frame(Taxon = taxa, Art = labels, check.names = FALSE)
   wb <- openxlsx::createWorkbook()
-  sheets <- list(Zulaessig = confirmed, Vorlaeufig = provisional,
+  sheets <- list(Zulaessig = combined, Vorlaeufig = provisional,
                  Taxa = taxon_key, Hinweise = notes)
   header <- openxlsx::createStyle(fontColour = "#FFFFFF", fgFill = "#285E52",
                                   textDecoration = "bold", wrapText = TRUE,
@@ -190,7 +195,8 @@ export_exchange_rules_matrix <- function(input_file, output_file,
     }
   }
   message("Excel summary: ", normalizePath(output_file, winslash = "/"))
-  invisible(list(confirmed = confirmed, provisional = provisional))
+  invisible(list(summary = combined, confirmed = confirmed,
+                 provisional = provisional))
 }
 
 # Display names match app.R; unknown taxa retain their original codes.
